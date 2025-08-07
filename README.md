@@ -133,7 +133,6 @@ Please address these review comments and make the necessary changes.
 | **Branch Review: Start Branch Review** | `Cmd+Shift+R` | Open review interface |
 | **Branch Review: Submit Review Comments to Cursor** | - | Copy formatted review to clipboard |
 | **Branch Review: Clear All Comments** | - | Remove all saved comments |
-| **Branch Review: Debug Stored Comments** | - | Show stored comment data in console |
 
 ## Requirements
 
