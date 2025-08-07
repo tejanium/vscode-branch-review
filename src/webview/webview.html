@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Branch Review</title>
+    <link rel="stylesheet" href="webview.css">
+</head>
+<body>
+    <div class="gh-header">
+                <div class="gh-header-content">
+            <div class="gh-header-left">
+                <h1 class="gh-header-title">
+                    Comparing
+                    <div class="branch-dropdown-container">
+                        <div class="branch-search-wrapper">
+                            <input type="text" id="branchSearchInput" class="branch-search-input"
+                                   placeholder="Select base branch..." readonly onclick="showBranchDropdown()">
+                            <div id="branchDropdownList" class="branch-dropdown-list">
+                                {{branchOptions}}
+                            </div>
+                        </div>
+                    </div>
+                    ...{{currentBranch}}
+                </h1>
+            </div>
+            <div class="gh-header-right">
+                <div class="gh-diff-stats">
+                    {{diffStats}}
+                </div>
+            </div>
+        </div>
+
+        <div class="gh-controls">
+            <button class="gh-btn gh-btn-refresh" onclick="refreshDiff()">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 6px;">
+                    <path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z"/>
+                </svg>
+                Refresh
+            </button>
+
+            <div style="flex: 1;"></div>
+
+            <button class="gh-btn gh-btn-primary" onclick="submitComments()">
+                📋 Compose Review & Copy to Clipboard
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loadingState" class="loading-container" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h3>Loading branch review...</h3>
+            <p id="loadingStatus">Initializing Git operations...</p>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div id="mainContent" style="max-width: 1200px; margin: 0 auto; padding: 24px;">
+        {{diffContent}}
+    </div>
+
+    <script src="webview.js"></script>
+</body>
+</html>
