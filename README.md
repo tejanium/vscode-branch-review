@@ -1,6 +1,6 @@
 # Branch Review
 
-A VS Code extension for local code review that formats comments for easy copy-paste into Cursor and other AI tools.
+A VS Code extension for local code review with **seamless Cursor AI integration**. Review your changes and automatically submit them to Cursor's chat with one click!
 
 ## Demo
 
@@ -8,12 +8,17 @@ A VS Code extension for local code review that formats comments for easy copy-pa
 
 ## Features
 
+### ✨ **New in v0.3.0: Seamless Cursor Integration**
+- **🚀 One-Click Submission**: Automatically opens Cursor chat and submits your review
+- **🎯 Auto-Focus**: Intelligently focuses chat input for immediate interaction
+- **🔄 Smart Fallbacks**: Multiple integration methods ensure reliability
+
+### 📋 **Core Review Features**
 - Compare current branch against any base branch
 - Split diff view with syntax highlighting
 - Add comments to specific lines or line ranges
 - Edit and delete comments
 - Persistent local storage of comments
-- Copy formatted review to clipboard for external tools
 - Configurable review template via VS Code settings
 
 ## Quick Start
@@ -22,15 +27,15 @@ A VS Code extension for local code review that formats comments for easy copy-pa
 2. Press `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Windows/Linux)
 3. Select a base branch to compare against
 4. Add comments to lines in the diff view
-5. Copy formatted review to clipboard
-6. Feed it into Cursor or other AI tools
+5. Click **"🚀 Submit Review to Chat"**
+6. **Watch as Cursor chat opens and your review appears automatically!** ✨
 
 ## How It Works
 
 1. **Select Base Branch**: Choose what branch to compare against
 2. **View Diff**: See side-by-side comparison of changes
 3. **Add Comments**: Click on line numbers to add review comments
-4. **Copy Review**: Generate formatted text and copy to clipboard for use in external tools
+4. **Submit to Chat**: One-click submission directly to Cursor's AI chat for instant feedback
 
 ## Usage
 
@@ -62,11 +67,15 @@ A VS Code extension for local code review that formats comments for easy copy-pa
 - Delete: Click delete button to remove comments
 - Multiple comments per file are supported
 
-### Copying Review
+### Submitting Review to Cursor Chat
 
-1. Click the copy button to format all comments
-2. Formatted review is copied to clipboard
-3. Comments are automatically cleared after copying
+1. Click **"🚀 Submit Review to Chat"** button
+2. **Cursor chat opens automatically**
+3. **Review is pasted automatically**
+4. **Start chatting with AI immediately** - no manual steps needed!
+5. Comments are automatically cleared after successful submission
+
+**Fallback:** If automatic submission fails, review is copied to clipboard as backup.
 
 ## Configuration
 
@@ -131,7 +140,7 @@ Please address these review comments and make the necessary changes.
 | Command | Shortcut | Description |
 |---------|----------|-------------|
 | **Branch Review: Start Branch Review** | `Cmd+Shift+R` | Open review interface |
-| **Branch Review: Submit Review Comments to Cursor** | - | Copy formatted review to clipboard |
+| **Branch Review: Submit Review to Chat** | - | Automatically submit review to Cursor chat |
 | **Branch Review: Clear All Comments** | - | Remove all saved comments |
 
 ## Requirements

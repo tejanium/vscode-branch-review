@@ -4,7 +4,7 @@
   "displayName": "Branch Review",
   "description": "GitHub-style pull request review workflow for local development with AI feedback integration.",
   "icon": "img/ico.png",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "homepage": "https://github.com/tejanium/vscode-branch-review/blob/master/README.md",
   "bugs": {
     "url": "https://github.com/tejanium/vscode-branch-review/issues"

@@ -89,9 +89,6 @@ export function activate(context: vscode.ExtensionContext) {
 
         // Auto-clear comments after submission
         commentStorage.clearAllComments();
-        vscode.window.showInformationMessage(
-          "Review copied to clipboard! Comments cleared."
-        );
       } catch (error) {
         console.error("Error submitting comments:", error);
         vscode.window.showErrorMessage(`Failed to submit comments: ${error}`);
@@ -198,9 +195,47 @@ async function copyReviewToClipboard(reviewSummary: string) {
   // Copy to clipboard
   await vscode.env.clipboard.writeText(reviewSummary);
 
-  // Show simple success message
+  try {
+    // Try to open and focus chat automatically
+    const chatCommands = [
+      "aichat.newchataction", // Open Chat
+      "aichat.newfollowupaction", // Focus chat input
+      "workbench.panel.chat.view.copilot.focus", // Focus chat panel
+      "composer.openChatAsEditor", // Open chat as editor
+    ];
+
+    let chatOpened = false;
+    for (const command of chatCommands) {
+      try {
+        await vscode.commands.executeCommand(command);
+        chatOpened = true;
+        break;
+      } catch (error) {
+        // Try next command
+      }
+    }
+
+    if (chatOpened) {
+      // Wait for chat to focus, then auto-paste
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      try {
+        await vscode.commands.executeCommand(
+          "editor.action.clipboardPasteAction"
+        );
+        vscode.window.showInformationMessage("✅ Review submitted to chat!");
+        return;
+      } catch (pasteError) {
+        // Fall back to manual paste instruction
+      }
+    }
+  } catch (error) {
+    // Fall back to original behavior
+  }
+
+  // Fallback: Show simple message
   vscode.window.showInformationMessage(
-    "Review copied to clipboard! Paste into VS Code chat, Cursor chat, or any AI tool for feedback."
+    "📋 Review copied to clipboard - paste in chat!"
   );
 }
 
