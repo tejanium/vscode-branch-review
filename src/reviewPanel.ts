@@ -17,6 +17,7 @@ export class ReviewPanel {
   private commentStorage: CommentStorage;
   private workspaceRoot: string;
   private currentDiff: FileDiff[] = [];
+  private currentBaseBranch: string = "";
 
   constructor(
     private context: vscode.ExtensionContext,
@@ -53,6 +54,9 @@ export class ReviewPanel {
       const mainBranch = await this.gitService.getMainBranch(
         this.workspaceRoot
       );
+
+      // Store the initial base branch
+      this.currentBaseBranch = mainBranch;
 
       // Check if on main branch
       if (currentBranch === mainBranch) {
@@ -288,7 +292,13 @@ export class ReviewPanel {
         this.workspaceRoot
       );
       const selectedBaseBranch =
-        baseBranch || (await this.gitService.getMainBranch(this.workspaceRoot));
+        baseBranch ||
+        this.currentBaseBranch ||
+        (await this.gitService.getMainBranch(this.workspaceRoot));
+
+      // Update the stored base branch
+      this.currentBaseBranch = selectedBaseBranch;
+
       const diff = await this.gitService.getDiffWithBranch(
         this.workspaceRoot,
         selectedBaseBranch
