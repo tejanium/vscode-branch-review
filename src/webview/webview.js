@@ -2,6 +2,18 @@ const vscode = acquireVsCodeApi();
 let comments = [];
 let selectedLines = new Set();
 
+// Helper function to properly escape text for JavaScript contexts
+function escapeJavaScript(text) {
+    if (!text) return '';
+    return text
+        .replace(/\\/g, '\\\\')   // Escape backslashes first
+        .replace(/'/g, "\\'")     // Escape single quotes
+        .replace(/"/g, '\\"')     // Escape double quotes
+        .replace(/\n/g, '\\n')    // Escape newlines
+        .replace(/\r/g, '\\r')    // Escape carriage returns
+        .replace(/\t/g, '\\t');   // Escape tabs
+}
+
 // Search state for navigation
 let currentMatches = [];
 let currentMatchIndex = -1;
@@ -675,7 +687,7 @@ function submitComment(filePath) {
         </div>
         <div class="comment-text">${text}</div>
         <div class="comment-actions">
-            <button class="br-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${text.replace(/'/g, "\\'")}', this)">✏️ Edit</button>
+            <button class="br-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${escapeJavaScript(text)}', this)">✏️ Edit</button>
             <button class="br-btn btn-delete" onclick="deleteInlineComment('${filePath}', ${startLine}, ${endLine}, this)">🗑️ Delete</button>
         </div>
     `;
@@ -711,7 +723,7 @@ function editComment(filePath, startLine, endLine, originalText, buttonElement) 
         <td colspan="2" class="br-comment-form">
             <textarea class="br-comment-textarea" placeholder="Edit your comment...">${originalText}</textarea>
             <div class="br-comment-actions">
-                <button class="br-btn" onclick="cancelEdit('${filePath}', ${startLine}, ${endLine}, '${originalText.replace(/'/g, "\\'")}', this)">Cancel</button>
+                <button class="br-btn" onclick="cancelEdit('${filePath}', ${startLine}, ${endLine}, '${escapeJavaScript(originalText)}', this)">Cancel</button>
                 <button class="br-btn br-btn-primary" onclick="updateComment('${filePath}', ${startLine}, ${endLine}, this)">Update comment</button>
             </div>
         </td>
@@ -741,7 +753,7 @@ function cancelEdit(filePath, startLine, endLine, originalText, buttonElement) {
                 </div>
                 <div class="comment-text">${originalText}</div>
                 <div class="comment-actions">
-                    <button class="br-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${originalText.replace(/'/g, "\\'")}', this)">✏️ Edit</button>
+                    <button class="br-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${escapeJavaScript(originalText)}', this)">✏️ Edit</button>
                     <button class="br-btn btn-delete" onclick="deleteInlineComment('${filePath}', ${startLine}, ${endLine}, this)">🗑️ Delete</button>
                 </div>
             </div>
@@ -783,7 +795,7 @@ function updateComment(filePath, startLine, endLine, buttonElement) {
                 </div>
                 <div class="comment-text">${newText}</div>
                 <div class="comment-actions">
-                    <button class="br-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${newText.replace(/'/g, "\\'")}', this)">✏️ Edit</button>
+                    <button class="br-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${escapeJavaScript(newText)}', this)">✏️ Edit</button>
                     <button class="br-btn btn-delete" onclick="deleteInlineComment('${filePath}', ${startLine}, ${endLine}, this)">🗑️ Delete</button>
                 </div>
             </div>
