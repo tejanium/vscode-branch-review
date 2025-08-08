@@ -4,6 +4,8 @@
 - **🔍 Advanced Search Functionality**: Full-text search within diff content with highlighting and navigation
 - **⌨️ Keyboard Shortcuts**: Ctrl+F (Cmd+F on Mac) to open search, Enter/Shift+Enter for navigation, Escape to close
 - **📁 Clickable File Paths**: Click on filenames to open/focus files directly in VS Code editor
+- **📋 Copy File Names**: Copy file paths to clipboard with visual feedback
+- **💬 Enhanced Commenting**: Comment on all line types including context lines (unchanged code)
 - **🎯 Smart Search UX**: Hidden by default with debounced real-time search (300ms delay) for responsive performance
 - **📍 Match Navigation**: Next/previous navigation with current position indicator (e.g., "2 of 5 matches")
 - **💫 Smooth Scrolling**: Auto-scroll to current match with smooth animation for better visual tracking

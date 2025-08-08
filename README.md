@@ -13,6 +13,8 @@ A VS Code extension for local code review with **seamless Cursor AI integration*
 - **🎯 Smart Search**: Real-time search with debouncing and intelligent highlighting
 - **📍 Match Navigation**: Navigate between search results with Enter/Shift+Enter or arrow buttons
 - **📁 Clickable Files**: Click filenames to open/focus files directly in VS Code
+- **📋 Copy File Names**: Copy file paths to clipboard with visual feedback
+- **💬 Enhanced Commenting**: Comment on all line types including context lines (unchanged code)
 - **💫 Smooth UX**: Hidden search interface that appears on demand
 
 ### ✨ **Seamless Cursor Integration**
@@ -23,7 +25,7 @@ A VS Code extension for local code review with **seamless Cursor AI integration*
 ### 📋 **Core Review Features**
 - Compare current branch against any base branch
 - Split diff view with syntax highlighting
-- Add comments to specific lines or line ranges
+- Add comments to specific lines or line ranges (including context lines)
 - Edit and delete comments
 - Persistent local storage of comments
 - Configurable review template via VS Code settings
@@ -60,7 +62,7 @@ A VS Code extension for local code review with **seamless Cursor AI integration*
 ### Adding Comments
 
 **Single Line:**
-1. Click line number or `+` button
+1. Click line number or `+` button (available on all line types including context lines)
 2. Type comment in text area
 3. Click "Add comment"
 
@@ -73,6 +75,16 @@ A VS Code extension for local code review with **seamless Cursor AI integration*
 - Edit: Click edit button on existing comments
 - Delete: Click delete button to remove comments
 - Multiple comments per file are supported
+
+### File Operations
+
+**Opening Files:**
+- Click on any filename to open/focus it in VS Code editor
+- Files open in preview mode with focus for immediate editing
+
+**Copying File Paths:**
+- Click the copy button next to filenames
+- File path is copied to clipboard with visual confirmation
 
 ### 🔍 Searching Within Diffs
 
