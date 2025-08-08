@@ -534,7 +534,7 @@ export class ReviewPanel {
           const newLineId = `${file.filePath}:new:${newLineNum}`;
 
           tableHtml += `
-            <tr class="br-diff-row">
+            <tr class="br-diff-row" data-line-id="${newLineId}">
               <td class="br-diff-line-num br-old-line-num" onclick="selectLine('${this.escapeJavaScript(
                 file.filePath
               )}', ${oldLineNum}, this, event)">${oldLineNum}</td>
