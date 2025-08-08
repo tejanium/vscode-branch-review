@@ -2,8 +2,322 @@ const vscode = acquireVsCodeApi();
 let comments = [];
 let selectedLines = new Set();
 
+// Search state for navigation
+let currentMatches = [];
+let currentMatchIndex = -1;
+let lastSearchQuery = '';
+let searchDebounceTimer = null;
+
+// Simple search functionality
+function focusSearch() {
+    const searchContainer = document.getElementById('searchContainer');
+    const input = document.getElementById('searchInput');
+
+    if (searchContainer && input) {
+        // Show search box
+        searchContainer.style.display = 'block';
+        // Focus and select text
+        input.focus();
+        input.select();
+
+    }
+}
+
+function closeSearch() {
+    const searchContainer = document.getElementById('searchContainer');
+    if (searchContainer) {
+        // Hide search box
+        searchContainer.style.display = 'none';
+
+    }
+    // Also clear search
+    clearSearch();
+}
+
+function clearSearch() {
+    const input = document.getElementById('searchInput');
+    if (input) {
+        input.value = '';
+    }
+    // Clear any existing highlights
+    const highlights = document.querySelectorAll('.search-highlight');
+
+    highlights.forEach(highlight => {
+        const parent = highlight.parentNode;
+        if (parent) {
+            parent.insertBefore(document.createTextNode(highlight.textContent), highlight);
+            parent.removeChild(highlight);
+            parent.normalize(); // Merge adjacent text nodes
+        }
+    });
+
+    // Reset navigation state
+    currentMatches = [];
+    currentMatchIndex = -1;
+    lastSearchQuery = '';
+    updateSearchResults();
+}
+
+function performSearch() {
+    const input = document.getElementById('searchInput');
+    if (!input) {
+
+        return;
+    }
+
+    const query = input.value.trim();
+
+
+    if (!query) {
+
+        clearSearch();
+        return;
+    }
+
+    // Clear previous highlights and reset state
+    const highlights = document.querySelectorAll('.search-highlight');
+
+    highlights.forEach(highlight => {
+        const parent = highlight.parentNode;
+        if (parent) {
+            parent.insertBefore(document.createTextNode(highlight.textContent), highlight);
+            parent.removeChild(highlight);
+            parent.normalize();
+        }
+    });
+
+    // Reset navigation state
+    currentMatches = [];
+    currentMatchIndex = -1;
+
+
+    let matchCount = 0;
+
+        // Find only the code content cells in diff tables
+    const codeContentCells = document.querySelectorAll('.br-diff-line-content');
+
+
+    // Create regex for case-insensitive matching - simpler approach
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, function(match) {
+        return '\\' + match;
+    });
+    const regex = new RegExp('(' + escapedQuery + ')', 'gi');
+
+        // Search and highlight only in code content cells
+    codeContentCells.forEach(function(cell) {
+        const originalText = cell.textContent || '';
+        if (originalText.toLowerCase().includes(query.toLowerCase())) {
+
+
+            // Get the HTML and replace matches
+            const originalHTML = cell.innerHTML;
+            const highlightedHTML = originalHTML.replace(regex, function(match) {
+                const matchId = 'match-' + matchCount;
+                matchCount++;
+
+                // Store match element reference for navigation
+                const matchElement = '<span class="search-highlight" id="' + matchId + '">' + match + '</span>';
+
+                return matchElement;
+            });
+
+            cell.innerHTML = highlightedHTML;
+        }
+    });
+
+    // After highlighting, collect all match elements for navigation
+    const matchElements = document.querySelectorAll('.search-highlight');
+    currentMatches = Array.from(matchElements);
+
+
+
+
+        // Store the search query for comparison
+    lastSearchQuery = query;
+
+    // Navigate to first match automatically
+    if (currentMatches.length > 0) {
+        currentMatchIndex = 0;
+        highlightCurrentMatch();
+        scrollToCurrentMatch();
+    }
+
+    // Update results counter
+    updateSearchResults();
+}
+
+function debouncedSearch() {
+    // Clear any existing timer
+    if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+    }
+
+    // Set new timer for 300ms delay
+    searchDebounceTimer = setTimeout(function() {
+        performSearch();
+    }, 300);
+
+
+}
+
+function updateSearchResults() {
+    const resultsSpan = document.getElementById('searchResults');
+    if (resultsSpan) {
+        if (currentMatches.length > 0) {
+            resultsSpan.textContent = (currentMatchIndex + 1) + ' of ' + currentMatches.length;
+        } else {
+            resultsSpan.textContent = '0 of 0';
+        }
+
+    }
+}
+
+function highlightCurrentMatch() {
+    // Remove previous current highlight
+    const prevCurrent = document.querySelector('.search-highlight.current');
+    if (prevCurrent) {
+        prevCurrent.classList.remove('current');
+    }
+
+    // Add current highlight
+    if (currentMatchIndex >= 0 && currentMatchIndex < currentMatches.length) {
+        currentMatches[currentMatchIndex].classList.add('current');
+    }
+}
+
+function scrollToCurrentMatch() {
+    if (currentMatchIndex >= 0 && currentMatchIndex < currentMatches.length) {
+        const currentMatch = currentMatches[currentMatchIndex];
+        currentMatch.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+
+    }
+}
+
+function navigateToNextMatch() {
+    if (currentMatches.length === 0) return;
+
+    currentMatchIndex = (currentMatchIndex + 1) % currentMatches.length;
+    highlightCurrentMatch();
+    scrollToCurrentMatch();
+    updateSearchResults();
+}
+
+function navigateToPrevMatch() {
+    if (currentMatches.length === 0) return;
+
+    currentMatchIndex = currentMatchIndex <= 0 ? currentMatches.length - 1 : currentMatchIndex - 1;
+    highlightCurrentMatch();
+    scrollToCurrentMatch();
+    updateSearchResults();
+}
+
+// File operations
+function openFile(filePath) {
+
+    vscode.postMessage({
+        command: 'openFile',
+        filePath: filePath
+    });
+}
+
 // Load existing comments
 vscode.postMessage({ command: 'loadComments' });
+
+// Global keybinding for Ctrl+F / Cmd+F
+document.addEventListener('keydown', function(event) {
+    // Check for Ctrl+F (Windows/Linux) or Cmd+F (Mac)
+    if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
+        event.preventDefault();
+        focusSearch();
+    }
+
+    // Escape key to close search
+    if (event.key === 'Escape') {
+        const searchContainer = document.getElementById('searchContainer');
+        if (searchContainer && searchContainer.style.display !== 'none') {
+            closeSearch();
+        }
+    }
+});
+
+// Search event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchNext = document.getElementById('searchNext');
+    const searchPrev = document.getElementById('searchPrev');
+    const searchClose = document.getElementById('searchClose');
+
+        if (searchInput) {
+        // Real-time search with debouncing
+        searchInput.addEventListener('input', function(event) {
+            const currentQuery = searchInput.value.trim();
+
+
+            if (!currentQuery) {
+                // Empty query - clear immediately
+                if (searchDebounceTimer) {
+                    clearTimeout(searchDebounceTimer);
+                }
+                clearSearch();
+            } else {
+                // Non-empty query - debounced search
+                debouncedSearch();
+            }
+        });
+
+        // Keep Enter key functionality for navigation
+        searchInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+
+                // Cancel any pending debounced search
+                if (searchDebounceTimer) {
+                    clearTimeout(searchDebounceTimer);
+                }
+
+                const currentQuery = searchInput.value.trim();
+
+                if (event.shiftKey) {
+                    // Shift+Enter: always navigate previous (if matches exist)
+                    if (currentMatches.length > 0 && currentQuery === lastSearchQuery) {
+                        navigateToPrevMatch();
+                    } else {
+                        // If query changed or no matches, search first
+                        performSearch();
+                    }
+                } else {
+                    // Enter: check if query changed or if we need to search
+                    if (currentQuery !== lastSearchQuery || currentMatches.length === 0) {
+                        // Query changed or no current search - perform immediate search
+                        performSearch();
+                    } else {
+                        // Same query and matches exist - navigate to next
+                        navigateToNextMatch();
+                    }
+                }
+            }
+        });
+
+    }
+
+    if (searchNext) {
+        searchNext.addEventListener('click', navigateToNextMatch);
+
+    }
+
+    if (searchPrev) {
+        searchPrev.addEventListener('click', navigateToPrevMatch);
+
+    }
+
+    if (searchClose) {
+        searchClose.addEventListener('click', closeSearch);
+
+    }
+});
 
 // Listen for messages from extension
 window.addEventListener('message', event => {
@@ -43,7 +357,7 @@ function selectLine(filePath, lineNumber, element, event) {
         selectedLines.forEach(id => {
             if (id.startsWith(filePath + ':')) {
                 const prevRow = document.querySelector(`[data-line-id="${id}"]`);
-                if (prevRow) prevRow.classList.remove('gh-line-selected');
+                if (prevRow) prevRow.classList.remove('br-line-selected');
                 selectedLines.delete(id);
             }
         });
@@ -54,7 +368,7 @@ function selectLine(filePath, lineNumber, element, event) {
             rangeRows.forEach(rangeRow => {
                 const rangeLineId = rangeRow.getAttribute('data-line-id');
                 selectedLines.add(rangeLineId);
-                rangeRow.classList.add('gh-line-selected');
+                rangeRow.classList.add('br-line-selected');
             });
         }
 
@@ -62,29 +376,29 @@ function selectLine(filePath, lineNumber, element, event) {
         // Ctrl/Cmd-click: toggle individual line
         if (selectedLines.has(actualLineId)) {
             selectedLines.delete(actualLineId);
-            row.classList.remove('gh-line-selected');
+            row.classList.remove('br-line-selected');
         } else {
             selectedLines.add(actualLineId);
-            row.classList.add('gh-line-selected');
+            row.classList.add('br-line-selected');
         }
 
     } else {
         // Regular click: toggle line if already selected, otherwise select only this line
         if (selectedLines.has(actualLineId)) {
             selectedLines.delete(actualLineId);
-            row.classList.remove('gh-line-selected');
+            row.classList.remove('br-line-selected');
         } else {
             // Clear previous selections for this file
             selectedLines.forEach(id => {
                 if (id.startsWith(filePath + ':')) {
                     const prevRow = document.querySelector(`[data-line-id="${id}"]`);
-                    if (prevRow) prevRow.classList.remove('gh-line-selected');
+                    if (prevRow) prevRow.classList.remove('br-line-selected');
                     selectedLines.delete(id);
                 }
             });
 
             selectedLines.add(actualLineId);
-            row.classList.add('gh-line-selected');
+            row.classList.add('br-line-selected');
         }
     }
 
@@ -94,11 +408,11 @@ function selectLine(filePath, lineNumber, element, event) {
         lastSelectedLine = lineNumber;
     }
 
-    console.log('Selected lines:', Array.from(selectedLines));
+
 }
 
 function addCommentAtLine(filePath, lineNumber, event) {
-    console.log('addCommentAtLine called:', filePath, lineNumber);
+
     event.stopPropagation();
 
     // Check if this line exists on the right side (new/changed code)
@@ -109,7 +423,7 @@ function addCommentAtLine(filePath, lineNumber, event) {
     }
 
     // Clear any existing comment forms first
-    document.querySelectorAll('.gh-comment-form-row').forEach(form => form.remove());
+    document.querySelectorAll('.br-comment-form-row').forEach(form => form.remove());
 
     // Get currently selected lines for this file (only right side for commenting)
     let fileSelectedLines = Array.from(selectedLines)
@@ -143,12 +457,12 @@ function addCommentAtLine(filePath, lineNumber, event) {
 
         if (lineId && row) {
             selectedLines.add(lineId);
-            row.classList.add('gh-line-selected');
+            row.classList.add('br-line-selected');
             fileSelectedLines = [lineNumber];
         }
     }
 
-    console.log('Selected lines for comment:', fileSelectedLines);
+
 
     // Generate placeholder text based on selected lines
     let placeholderText;
@@ -166,7 +480,7 @@ function addCommentAtLine(filePath, lineNumber, event) {
     // Only use the new side for comment insertion (since we're reviewing changes)
     let insertAfterRow = document.querySelector(`[data-line-id="${filePath}:new:${lastLineNumber}"]`);
 
-    console.log('Looking for new side line ID:', `${filePath}:new:${lastLineNumber}`);
+
 
     if (!insertAfterRow) {
         console.error('New side row not found for line ID. Trying fallback search...');
@@ -177,25 +491,27 @@ function addCommentAtLine(filePath, lineNumber, event) {
             console.error('No row found even with fallback search');
             // Show available data-line-id values for debugging
             const allRows = document.querySelectorAll('[data-line-id]');
-            console.log('Available data-line-id values:', Array.from(allRows).map(r => r.getAttribute('data-line-id')).slice(0, 10));
+
             return;
         }
     }
 
     // Show comment form immediately after the last selected row
     const commentFormRow = document.createElement('tr');
-    commentFormRow.className = 'gh-comment-form-row';
+    commentFormRow.className = 'br-comment-form-row';
 
     // Detect number of columns in the current table row
     const colCount = insertAfterRow.children.length;
-    console.log('Column count for comment form:', colCount);
+
 
     commentFormRow.innerHTML = `
-        <td colspan="${colCount}" class="gh-comment-form">
-            <textarea class="gh-comment-textarea" placeholder="${placeholderText}"></textarea>
-            <div class="gh-comment-actions">
-                <button class="gh-btn" onclick="cancelComment()">Cancel</button>
-                <button class="gh-btn gh-btn-primary" onclick="submitComment('${filePath}')">Add comment</button>
+        <td class="br-comment-form-spacer"></td>
+        <td class="br-comment-form-spacer"></td>
+        <td colspan="2" class="br-comment-form">
+            <textarea class="br-comment-textarea" placeholder="${placeholderText}"></textarea>
+            <div class="br-comment-actions">
+                <button class="br-btn" onclick="cancelComment()">Cancel</button>
+                <button class="br-btn br-btn-primary" onclick="submitComment('${filePath}')">Add comment</button>
             </div>
         </td>
     `;
@@ -211,8 +527,8 @@ function addCommentAtLine(filePath, lineNumber, event) {
 }
 
 function submitComment(filePath) {
-    console.log('submitComment called for:', filePath);
-    const form = document.querySelector('.gh-comment-form');
+
+    const form = document.querySelector('.br-comment-form');
     if (!form) {
         console.error('No comment form found');
         return;
@@ -225,7 +541,7 @@ function submitComment(filePath) {
     }
 
     const text = textarea.value.trim();
-    console.log('Comment text:', text);
+
 
     if (!text) {
         console.warn('Please enter a comment');
@@ -233,14 +549,14 @@ function submitComment(filePath) {
     }
 
     // Get selected lines for this file
-    console.log('Current selectedLines:', Array.from(selectedLines));
+
     const fileLines = Array.from(selectedLines)
         .filter(line => line.startsWith(filePath + ':'))
         .filter(line => line.includes(':new:')) // Only new side lines
         .map(line => parseInt(line.split(':')[2])) // Get line number from file:new:line format
         .sort((a, b) => a - b);
 
-    console.log('Filtered file lines:', fileLines);
+
 
     if (fileLines.length === 0) {
         // If no lines selected, use the line where comment form was opened
@@ -252,7 +568,7 @@ function submitComment(filePath) {
             if (lineId.includes(':new:')) {
                 const lineNumber = parseInt(lineId.split(':')[2]);
                 fileLines.push(lineNumber);
-                console.log('Using line from form context:', lineNumber);
+
             }
         } else {
             console.warn('Please select lines to comment on');
@@ -263,7 +579,7 @@ function submitComment(filePath) {
     const startLine = fileLines[0];
     const endLine = fileLines[fileLines.length - 1];
 
-    console.log('Sending comment:', { filePath, startLine, endLine, text });
+
 
     // Generate a consistent ID based on file path and line numbers
     const commentId = `${filePath}:${startLine}:${endLine}:${Date.now()}`;
@@ -283,45 +599,51 @@ function submitComment(filePath) {
 
     // Replace the comment form with a comment display
     const commentDisplay = document.createElement('div');
-    commentDisplay.className = 'gh-inline-comment';
+    commentDisplay.className = 'br-inline-comment';
     commentDisplay.innerHTML = `
         <div class="comment-header">
             <strong>You</strong> commented on lines ${startLine}${startLine !== endLine ? `-${endLine}` : ''}
         </div>
         <div class="comment-text">${text}</div>
         <div class="comment-actions">
-            <button class="gh-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${text.replace(/'/g, "\\'")}', this)">✏️ Edit</button>
-            <button class="gh-btn btn-delete" onclick="deleteInlineComment('${filePath}', ${startLine}, ${endLine}, this)">🗑️ Delete</button>
+            <button class="br-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${text.replace(/'/g, "\\'")}', this)">✏️ Edit</button>
+            <button class="br-btn btn-delete" onclick="deleteInlineComment('${filePath}', ${startLine}, ${endLine}, this)">🗑️ Delete</button>
         </div>
     `;
 
     // Replace the form with the comment display
     const formRow = form.closest('tr');
-    formRow.innerHTML = `<td colspan="${formRow.querySelector('td').getAttribute('colspan')}" class="gh-inline-comment-cell">${commentDisplay.outerHTML}</td>`;
-    formRow.className = 'gh-comment-display-row';
+    formRow.innerHTML = `
+        <td class="br-comment-form-spacer"></td>
+        <td class="br-comment-form-spacer"></td>
+        <td colspan="2" class="br-inline-comment-cell">${commentDisplay.outerHTML}</td>
+    `;
+    formRow.className = 'br-comment-display-row';
 
     // Clear line selection for this comment
     selectedLines.clear();
-    document.querySelectorAll('.gh-line-selected').forEach(el => {
-        el.classList.remove('gh-line-selected');
+    document.querySelectorAll('.br-line-selected').forEach(el => {
+        el.classList.remove('br-line-selected');
     });
 }
 
 function editComment(filePath, startLine, endLine, originalText, buttonElement) {
-    console.log('editComment called:', filePath, startLine, endLine, originalText);
+
 
     // Find the comment display row
     const commentRow = buttonElement.closest('tr');
     const colCount = commentRow.querySelector('td').getAttribute('colspan');
 
     // Convert back to comment form
-    commentRow.className = 'gh-comment-form-row';
+    commentRow.className = 'br-comment-form-row';
     commentRow.innerHTML = `
-        <td colspan="${colCount}" class="gh-comment-form">
-            <textarea class="gh-comment-textarea" placeholder="Edit your comment...">${originalText}</textarea>
-            <div class="gh-comment-actions">
-                <button class="gh-btn" onclick="cancelEdit('${filePath}', ${startLine}, ${endLine}, '${originalText.replace(/'/g, "\\'")}', this)">Cancel</button>
-                <button class="gh-btn gh-btn-primary" onclick="updateComment('${filePath}', ${startLine}, ${endLine}, this)">Update comment</button>
+        <td class="br-comment-form-spacer"></td>
+        <td class="br-comment-form-spacer"></td>
+        <td colspan="2" class="br-comment-form">
+            <textarea class="br-comment-textarea" placeholder="Edit your comment...">${originalText}</textarea>
+            <div class="br-comment-actions">
+                <button class="br-btn" onclick="cancelEdit('${filePath}', ${startLine}, ${endLine}, '${originalText.replace(/'/g, "\\'")}', this)">Cancel</button>
+                <button class="br-btn br-btn-primary" onclick="updateComment('${filePath}', ${startLine}, ${endLine}, this)">Update comment</button>
             </div>
         </td>
     `;
@@ -339,17 +661,19 @@ function cancelEdit(filePath, startLine, endLine, originalText, buttonElement) {
     const commentRow = buttonElement.closest('tr');
     const colCount = commentRow.querySelector('td').getAttribute('colspan');
 
-    commentRow.className = 'gh-comment-display-row';
+    commentRow.className = 'br-comment-display-row';
     commentRow.innerHTML = `
-        <td colspan="${colCount}" class="gh-inline-comment-cell">
-            <div class="gh-inline-comment">
+        <td class="br-comment-form-spacer"></td>
+        <td class="br-comment-form-spacer"></td>
+        <td colspan="2" class="br-inline-comment-cell">
+            <div class="br-inline-comment">
                 <div class="comment-header">
                     <strong>You</strong> commented on lines ${startLine}${startLine !== endLine ? `-${endLine}` : ''}
                 </div>
                 <div class="comment-text">${originalText}</div>
                 <div class="comment-actions">
-                    <button class="gh-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${originalText.replace(/'/g, "\\'")}', this)">✏️ Edit</button>
-                    <button class="gh-btn btn-delete" onclick="deleteInlineComment('${filePath}', ${startLine}, ${endLine}, this)">🗑️ Delete</button>
+                    <button class="br-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${originalText.replace(/'/g, "\\'")}', this)">✏️ Edit</button>
+                    <button class="br-btn btn-delete" onclick="deleteInlineComment('${filePath}', ${startLine}, ${endLine}, this)">🗑️ Delete</button>
                 </div>
             </div>
         </td>
@@ -379,18 +703,19 @@ function updateComment(filePath, startLine, endLine, buttonElement) {
     });
 
     // Convert back to comment display with updated text
-    const colCount = commentRow.querySelector('td').getAttribute('colspan');
-    commentRow.className = 'gh-comment-display-row';
+    commentRow.className = 'br-comment-display-row';
     commentRow.innerHTML = `
-        <td colspan="${colCount}" class="gh-inline-comment-cell">
-            <div class="gh-inline-comment">
+        <td class="br-comment-form-spacer"></td>
+        <td class="br-comment-form-spacer"></td>
+        <td colspan="2" class="br-inline-comment-cell">
+            <div class="br-inline-comment">
                 <div class="comment-header">
                     <strong>You</strong> commented on lines ${startLine}${startLine !== endLine ? `-${endLine}` : ''}
                 </div>
                 <div class="comment-text">${newText}</div>
                 <div class="comment-actions">
-                    <button class="gh-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${newText.replace(/'/g, "\\'")}', this)">✏️ Edit</button>
-                    <button class="gh-btn btn-delete" onclick="deleteInlineComment('${filePath}', ${startLine}, ${endLine}, this)">🗑️ Delete</button>
+                    <button class="br-btn" onclick="editComment('${filePath}', ${startLine}, ${endLine}, '${newText.replace(/'/g, "\\'")}', this)">✏️ Edit</button>
+                    <button class="br-btn btn-delete" onclick="deleteInlineComment('${filePath}', ${startLine}, ${endLine}, this)">🗑️ Delete</button>
                 </div>
             </div>
         </td>
@@ -414,10 +739,10 @@ function deleteInlineComment(filePath, startLine, endLine, buttonElement) {
 }
 
 function cancelComment() {
-    document.querySelectorAll('.gh-comment-form-row').forEach(form => form.remove());
+    document.querySelectorAll('.br-comment-form-row').forEach(form => form.remove());
     selectedLines.clear();
-    document.querySelectorAll('.gh-line-selected').forEach(el => {
-        el.classList.remove('gh-line-selected');
+    document.querySelectorAll('.br-line-selected').forEach(el => {
+        el.classList.remove('br-line-selected');
     });
 }
 
@@ -440,11 +765,11 @@ function updateCommentDisplay() {
             if (row) {
                 // Check if comment is already displayed
                 const existingComment = row.nextElementSibling;
-                if (existingComment && existingComment.classList.contains('gh-comment-row')) {
+                if (existingComment && existingComment.classList.contains('br-comment-row')) {
                     // Update existing comment
-                    const commentBox = existingComment.querySelector('.gh-comment-box');
+                    const commentBox = existingComment.querySelector('.br-comment-box');
                     if (commentBox) {
-                        commentBox.querySelector('.gh-comment-text').textContent = comment.text;
+                        commentBox.querySelector('.br-comment-text').textContent = comment.text;
                     }
                 } else {
                     // Create new comment display
@@ -458,8 +783,8 @@ function updateCommentDisplay() {
 // Removed toggleDiffView - only using split view now
 
 function changeBranch(newBaseBranch) {
-    console.log('changeBranch called with:', newBaseBranch);
-    console.log('vscode object:', typeof vscode);
+
+
     vscode.postMessage({
         command: 'changeBranch',
         data: { baseBranch: newBaseBranch }
@@ -467,14 +792,14 @@ function changeBranch(newBaseBranch) {
 }
 
 function refreshDiff() {
-    console.log('Refreshing diff...');
+
     vscode.postMessage({
         command: 'refreshDiff'
     });
 }
 
 function deleteComment(commentId) {
-    console.log('Deleting comment:', commentId);
+
     vscode.postMessage({
         command: 'deleteComment',
         data: { id: commentId }
@@ -482,8 +807,8 @@ function deleteComment(commentId) {
 }
 
 function submitComments() {
-    console.log('Submit button clicked!');
-    console.log('Current comments:', comments);
+
+
 
     if (comments.length === 0) {
         console.warn('No comments to submit. Please add some comments first by selecting lines and typing feedback.');
@@ -636,7 +961,7 @@ function showErrorMessage(message) {
         <div style="text-align: center; padding: 40px; color: #d73a49;">
             <h3>⚠️ Unable to Load Review</h3>
             <p style="margin: 16px 0; color: #586069;">${message}</p>
-            <button class="gh-btn gh-btn-primary" onclick="location.reload()" style="margin-top: 16px;">
+            <button class="br-btn br-btn-primary" onclick="location.reload()" style="margin-top: 16px;">
                 Try Again
             </button>
         </div>

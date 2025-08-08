@@ -274,6 +274,43 @@ export class ReviewPanel {
       case WEBVIEW_COMMANDS.SUBMIT_COMMENTS:
         vscode.commands.executeCommand("branchReview.submitComments");
         break;
+      case WEBVIEW_COMMANDS.OPEN_FILE:
+        await this.openFile(message.filePath);
+        break;
+    }
+  }
+
+  private async openFile(filePath: string) {
+    if (!filePath) {
+      console.error("No file path provided");
+      return;
+    }
+
+    try {
+      // Resolve the full file path
+      const fullPath = path.resolve(this.workspaceRoot, filePath);
+
+      // Convert to VS Code URI
+      const fileUri = vscode.Uri.file(fullPath);
+
+      // Check if file exists and open it
+      try {
+        await vscode.workspace.fs.stat(fileUri);
+        // File exists, open it
+        const document = await vscode.workspace.openTextDocument(fileUri);
+        await vscode.window.showTextDocument(document, {
+          preview: false, // Don't open in preview mode
+          preserveFocus: false, // Focus the editor
+        });
+
+      } catch (statError) {
+        // File doesn't exist, show error
+        vscode.window.showErrorMessage(`File not found: ${filePath}`);
+        console.error(`File not found: ${filePath}`, statError);
+      }
+    } catch (error) {
+      console.error("Error opening file:", error);
+      vscode.window.showErrorMessage(`Error opening file: ${filePath}`);
     }
   }
 
@@ -424,14 +461,16 @@ export class ReviewPanel {
     );
 
     return `
-        <div class="gh-file">
-            <div class="gh-file-header">
-                <div class="gh-file-info">
-                    <span class="gh-file-path">${file.filePath}</span>
+        <div class="br-file">
+            <div class="br-file-header">
+                <div class="br-file-info">
+                    <span class="br-file-path clickable" onclick="openFile('${this.escapeJavaScript(
+                      file.filePath
+                    )}')">${file.filePath}</span>
                 </div>
-                <div class="gh-file-stats">
-                    <span class="gh-added">+${addedLines}</span>
-                    <span class="gh-removed">-${removedLines}</span>
+                <div class="br-file-stats">
+                    <span class="br-added">+${addedLines}</span>
+                    <span class="br-removed">-${removedLines}</span>
                 </div>
             </div>
             <div class="split-view">
@@ -442,24 +481,320 @@ export class ReviewPanel {
   }
 
   private renderSplitView(file: FileDiff): string {
-    return `
-        <div class="split-side old">
-          <div class="split-side-header">Before: ${file.filePath}</div>
-          ${this.renderOldSideTable(file)}
-        </div>
-        <div class="split-side new">
-          <div class="split-side-header">After: ${file.filePath}</div>
-          ${this.renderNewSideTable(file)}
-        </div>
-    `;
+    return this.renderUnifiedTable(file);
+  }
+
+  private renderUnifiedTable(file: FileDiff): string {
+    let tableHtml = '<table class="br-unified-diff-table">';
+
+    for (const hunk of file.hunks) {
+      // Add hunk header spanning all 4 columns
+      const hunkHeader = `@@ -${hunk.oldStart},${
+        hunk.oldLines || hunk.lines.filter((l) => l.type !== "added").length
+      } +${hunk.newStart},${
+        hunk.newLines || hunk.lines.filter((l) => l.type !== "removed").length
+      } @@`;
+
+      tableHtml += `
+        <tr class="br-hunk-header">
+          <td class="br-hunk-header-line">...</td>
+          <td colspan="3" class="br-hunk-header-content">
+            <span class="br-hunk-header-text">${hunkHeader}</span>
+          </td>
+        </tr>
+      `;
+
+      let oldLine = hunk.oldStart;
+      let newLine = hunk.newStart;
+
+      // Group lines for proper GitHub-style pairing
+      const lines = hunk.lines;
+      let i = 0;
+
+      while (i < lines.length) {
+        const line = lines[i];
+
+        if (line.type === "unchanged") {
+          // Unchanged lines: show same content on both sides
+          const oldLineNum = oldLine.toString();
+          const newLineNum = newLine.toString();
+          const content = this.addSyntaxHighlighting(
+            line.content,
+            file.filePath
+          );
+          const oldLineId = `${file.filePath}:old:${oldLineNum}`;
+          const newLineId = `${file.filePath}:new:${newLineNum}`;
+
+          tableHtml += `
+            <tr class="br-diff-row">
+              <td class="br-diff-line-num br-old-line-num" onclick="selectLine('${this.escapeJavaScript(
+                file.filePath
+              )}', ${oldLineNum}, this, event)">${oldLineNum}</td>
+              <td class="br-diff-line-content br-old-content" onclick="selectLine('${this.escapeJavaScript(
+                file.filePath
+              )}', ${oldLineNum}, this, event)">
+                <pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${content}</pre>
+              </td>
+              <td class="br-diff-line-num br-new-line-num" onclick="selectLine('${this.escapeJavaScript(
+                file.filePath
+              )}', ${newLineNum}, this, event)">${newLineNum}</td>
+              <td class="br-diff-line-content br-new-content" onclick="selectLine('${this.escapeJavaScript(
+                file.filePath
+              )}', ${newLineNum}, this, event)">
+                <button class="br-comment-btn" onclick="addCommentAtLine('${this.escapeJavaScript(
+                  file.filePath
+                )}', ${newLineNum}, event)">+</button>
+                <pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${content}</pre>
+              </td>
+            </tr>
+          `;
+          oldLine++;
+          newLine++;
+          i++;
+        } else {
+          // Handle removed/added lines: pair them up on same rows
+          const removedLines: typeof lines = [];
+          const addedLines: typeof lines = [];
+
+          // Collect consecutive removed lines
+          while (i < lines.length && lines[i].type === "removed") {
+            removedLines.push(lines[i]);
+            i++;
+          }
+
+          // Collect consecutive added lines
+          while (i < lines.length && lines[i].type === "added") {
+            addedLines.push(lines[i]);
+            i++;
+          }
+
+          // Pair them up (GitHub style: align corresponding lines)
+          const maxLines = Math.max(removedLines.length, addedLines.length);
+
+          for (let j = 0; j < maxLines; j++) {
+            const removedLine = removedLines[j];
+            const addedLine = addedLines[j];
+
+            let oldLineNum = "";
+            let oldContent = "";
+            let oldLineId = "";
+            let newLineNum = "";
+            let newContent = "";
+            let newLineId = "";
+            let rowClass = "";
+
+            if (removedLine) {
+              oldLineNum = oldLine.toString();
+              oldContent = this.addSyntaxHighlighting(
+                removedLine.content,
+                file.filePath
+              );
+              oldLineId = `${file.filePath}:old:${oldLineNum}`;
+              oldLine++;
+            }
+
+            if (addedLine) {
+              newLineNum = newLine.toString();
+              newContent = this.addSyntaxHighlighting(
+                addedLine.content,
+                file.filePath
+              );
+              newLineId = `${file.filePath}:new:${newLineNum}`;
+              newLine++;
+            }
+
+            // Determine row class based on what's present
+            if (removedLine && addedLine) {
+              rowClass = "br-line-modified"; // Both sides have content (modified line)
+            } else if (removedLine) {
+              rowClass = "br-line-removed"; // Only old side (removed line)
+            } else if (addedLine) {
+              rowClass = "br-line-added"; // Only new side (added line)
+            }
+
+            tableHtml += `
+              <tr class="br-diff-row ${rowClass}" ${
+              newLineId ? `data-line-id="${newLineId}"` : ""
+            }>
+                <td class="br-diff-line-num br-old-line-num" ${
+                  oldLineId
+                    ? `onclick="selectLine('${this.escapeJavaScript(
+                        file.filePath
+                      )}', ${oldLineNum}, this, event)"`
+                    : ""
+                }>${oldLineNum}</td>
+                <td class="br-diff-line-content br-old-content" ${
+                  oldLineId
+                    ? `onclick="selectLine('${this.escapeJavaScript(
+                        file.filePath
+                      )}', ${oldLineNum}, this, event)"`
+                    : ""
+                }>
+                  <pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${oldContent}</pre>
+                </td>
+                <td class="br-diff-line-num br-new-line-num" ${
+                  newLineId
+                    ? `onclick="selectLine('${this.escapeJavaScript(
+                        file.filePath
+                      )}', ${newLineNum}, this, event)"`
+                    : ""
+                }>${newLineNum}</td>
+                <td class="br-diff-line-content br-new-content" ${
+                  newLineId
+                    ? `onclick="selectLine('${this.escapeJavaScript(
+                        file.filePath
+                      )}', ${newLineNum}, this, event)"`
+                    : ""
+                }>
+                  ${
+                    newLineId
+                      ? `<button class="br-comment-btn" onclick="addCommentAtLine('${this.escapeJavaScript(
+                          file.filePath
+                        )}', ${newLineNum}, event)">+</button>`
+                      : ""
+                  }
+                  <pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${newContent}</pre>
+                </td>
+              </tr>
+            `;
+          }
+        }
+      }
+    }
+
+    tableHtml += "</table>";
+    return tableHtml;
+  }
+
+  private renderAlignedTables(file: FileDiff): [string, string] {
+    let oldTableHtml = '<table class="br-diff-table">';
+    let newTableHtml = '<table class="br-diff-table">';
+
+    for (const hunk of file.hunks) {
+      // Add hunk header to both sides
+      const hunkHeader = `@@ -${hunk.oldStart},${
+        hunk.oldLines || hunk.lines.filter((l) => l.type !== "added").length
+      } +${hunk.newStart},${
+        hunk.newLines || hunk.lines.filter((l) => l.type !== "removed").length
+      } @@`;
+
+      const hunkHeaderRow = `
+        <tr class="br-hunk-header">
+          <td class="br-hunk-header-line">...</td>
+          <td class="br-hunk-header-content">
+            <span class="br-hunk-header-text">${hunkHeader}</span>
+          </td>
+        </tr>
+      `;
+
+      oldTableHtml += hunkHeaderRow;
+      newTableHtml += hunkHeaderRow;
+
+      let oldLine = hunk.oldStart;
+      let newLine = hunk.newStart;
+
+      for (const line of hunk.lines) {
+        if (line.type === "removed" || line.type === "unchanged") {
+          // Add to old side
+          const actualLineId = `${file.filePath}:old:${oldLine}`;
+          const rowClass = line.type === "removed" ? "br-line-removed" : "";
+
+          oldTableHtml += `
+            <tr class="br-diff-row ${rowClass}" data-line-id="${actualLineId}">
+              <td class="br-diff-line-num" onclick="selectLine('${
+                file.filePath
+              }', ${oldLine}, this, event)">
+                ${oldLine}
+              </td>
+              <td class="br-diff-line-content" onclick="selectLine('${
+                file.filePath
+              }', ${oldLine}, this, event)">
+                <pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${this.addSyntaxHighlighting(
+                  line.content,
+                  file.filePath
+                )}</pre>
+              </td>
+            </tr>
+          `;
+          oldLine++;
+        } else {
+          // Add padding row to old side for added lines
+          oldTableHtml += `
+            <tr class="br-diff-row">
+              <td class="br-diff-line-num"></td>
+              <td class="br-diff-line-content"></td>
+            </tr>
+          `;
+        }
+
+        if (line.type === "added" || line.type === "unchanged") {
+          // Add to new side
+          const actualLineId = `${file.filePath}:new:${newLine}`;
+          const rowClass = line.type === "added" ? "br-line-added" : "";
+
+          newTableHtml += `
+            <tr class="br-diff-row ${rowClass}" data-line-id="${actualLineId}">
+              <td class="br-diff-line-num" onclick="selectLine('${
+                file.filePath
+              }', ${newLine}, this, event)">
+                ${newLine}
+              </td>
+              <td class="br-diff-line-content" onclick="selectLine('${
+                file.filePath
+              }', ${newLine}, this, event)">
+                <button class="br-comment-btn" onclick="addCommentAtLine('${
+                  file.filePath
+                }', ${newLine}, event)">+</button>
+                <pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${this.addSyntaxHighlighting(
+                  line.content,
+                  file.filePath
+                )}</pre>
+              </td>
+            </tr>
+          `;
+          newLine++;
+        } else {
+          // Add padding row to new side for removed lines
+          newTableHtml += `
+            <tr class="br-diff-row">
+              <td class="br-diff-line-num"></td>
+              <td class="br-diff-line-content"></td>
+            </tr>
+          `;
+        }
+      }
+    }
+
+    oldTableHtml += "</table>";
+    newTableHtml += "</table>";
+
+    return [oldTableHtml, newTableHtml];
   }
 
   private renderOldSideTable(file: FileDiff): string {
-    let tableHtml = '<table class="gh-diff-table">';
+    let tableHtml = '<table class="br-diff-table">';
     let lineCounter = 1;
+    let previousHunkEnd = 0;
 
-    for (const hunk of file.hunks) {
+    for (let hunkIndex = 0; hunkIndex < file.hunks.length; hunkIndex++) {
+      const hunk = file.hunks[hunkIndex];
       let oldLine = hunk.oldStart;
+
+      // Add hunk header for each hunk (GitHub style)
+      const hunkHeader = `@@ -${hunk.oldStart},${
+        hunk.oldLines || hunk.lines.filter((l) => l.type !== "added").length
+      } +${hunk.newStart},${
+        hunk.newLines || hunk.lines.filter((l) => l.type !== "removed").length
+      } @@`;
+
+      tableHtml += `
+        <tr class="br-hunk-header">
+          <td class="br-hunk-header-line">...</td>
+          <td class="br-hunk-header-content">
+            <span class="br-hunk-header-text">${hunkHeader}</span>
+          </td>
+        </tr>
+      `;
 
       for (const line of hunk.lines) {
         let shouldShow = false;
@@ -469,7 +804,7 @@ export class ReviewPanel {
         if (line.type === "removed" || line.type === "unchanged") {
           shouldShow = true;
           lineNum = oldLine.toString();
-          rowClass = line.type === "removed" ? "gh-line-removed" : "";
+          rowClass = line.type === "removed" ? "br-line-removed" : "";
           oldLine++;
         }
 
@@ -478,13 +813,13 @@ export class ReviewPanel {
           const actualLineId = `${file.filePath}:old:${actualLineNum}`;
 
           tableHtml += `
-             <tr class="gh-diff-row ${rowClass}" data-line-id="${actualLineId}">
-               <td class="gh-diff-line-num" onclick="selectLine('${
+             <tr class="br-diff-row ${rowClass}" data-line-id="${actualLineId}">
+               <td class="br-diff-line-num" onclick="selectLine('${
                  file.filePath
                }', ${actualLineNum}, this, event)">
                  ${lineNum}
                </td>
-               <td class="gh-diff-line-content" onclick="selectLine('${
+               <td class="br-diff-line-content" onclick="selectLine('${
                  file.filePath
                }', ${actualLineNum}, this, event)">
                  <pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${this.addSyntaxHighlighting(
@@ -498,6 +833,9 @@ export class ReviewPanel {
 
         lineCounter++;
       }
+
+      // Update the previous hunk end for line jump detection
+      previousHunkEnd = oldLine - 1;
     }
 
     tableHtml += "</table>";
@@ -505,11 +843,29 @@ export class ReviewPanel {
   }
 
   private renderNewSideTable(file: FileDiff): string {
-    let tableHtml = '<table class="gh-diff-table">';
+    let tableHtml = '<table class="br-diff-table">';
     let lineCounter = 1;
+    let previousHunkEnd = 0;
 
-    for (const hunk of file.hunks) {
+    for (let hunkIndex = 0; hunkIndex < file.hunks.length; hunkIndex++) {
+      const hunk = file.hunks[hunkIndex];
       let newLine = hunk.newStart;
+
+      // Add hunk header for each hunk (GitHub style)
+      const hunkHeader = `@@ -${hunk.oldStart},${
+        hunk.oldLines || hunk.lines.filter((l) => l.type !== "added").length
+      } +${hunk.newStart},${
+        hunk.newLines || hunk.lines.filter((l) => l.type !== "removed").length
+      } @@`;
+
+      tableHtml += `
+        <tr class="br-hunk-header">
+          <td class="br-hunk-header-line">...</td>
+          <td class="br-hunk-header-content">
+            <span class="br-hunk-header-text">${hunkHeader}</span>
+          </td>
+        </tr>
+      `;
 
       for (const line of hunk.lines) {
         let shouldShow = false;
@@ -519,7 +875,7 @@ export class ReviewPanel {
         if (line.type === "added" || line.type === "unchanged") {
           shouldShow = true;
           lineNum = newLine.toString();
-          rowClass = line.type === "added" ? "gh-line-added" : "";
+          rowClass = line.type === "added" ? "br-line-added" : "";
           newLine++;
         }
 
@@ -528,16 +884,16 @@ export class ReviewPanel {
           const actualLineId = `${file.filePath}:new:${actualLineNum}`;
 
           tableHtml += `
-             <tr class="gh-diff-row ${rowClass}" data-line-id="${actualLineId}">
-               <td class="gh-diff-line-num" onclick="selectLine('${
+             <tr class="br-diff-row ${rowClass}" data-line-id="${actualLineId}">
+               <td class="br-diff-line-num" onclick="selectLine('${
                  file.filePath
                }', ${actualLineNum}, this, event)">
                  ${lineNum}
                </td>
-               <td class="gh-diff-line-content" onclick="selectLine('${
+               <td class="br-diff-line-content" onclick="selectLine('${
                  file.filePath
                }', ${actualLineNum}, this, event)">
-                 <button class="gh-comment-btn" onclick="addCommentAtLine('${
+                 <button class="br-comment-btn" onclick="addCommentAtLine('${
                    file.filePath
                  }', ${actualLineNum}, event)">+</button>
                  <pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${this.addSyntaxHighlighting(
@@ -551,6 +907,9 @@ export class ReviewPanel {
 
         lineCounter++;
       }
+
+      // Update the previous hunk end for line jump detection
+      previousHunkEnd = newLine - 1;
     }
 
     tableHtml += "</table>";
@@ -597,5 +956,15 @@ export class ReviewPanel {
       "'": "&#039;",
     };
     return text.replace(/[&<>"']/g, (m) => map[m]);
+  }
+
+  private escapeJavaScript(text: string): string {
+    return text
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, "\\n")
+      .replace(/\r/g, "\\r")
+      .replace(/\t/g, "\\t");
   }
 }

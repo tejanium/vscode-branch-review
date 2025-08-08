@@ -7,10 +7,10 @@
     <link rel="stylesheet" href="webview.css">
 </head>
 <body>
-    <div class="gh-header">
-                <div class="gh-header-content">
-            <div class="gh-header-left">
-                <h1 class="gh-header-title">
+    <div class="br-header">
+                <div class="br-header-content">
+            <div class="br-header-left">
+                <h1 class="br-header-title">
                     Comparing
                     <div class="branch-dropdown-container">
                         <div class="branch-search-wrapper">
@@ -24,15 +24,15 @@
                     ...{{currentBranch}}
                 </h1>
             </div>
-            <div class="gh-header-right">
-                <div class="gh-diff-stats">
+            <div class="br-header-right">
+                <div class="br-diff-stats">
                     {{diffStats}}
                 </div>
             </div>
         </div>
 
-        <div class="gh-controls">
-            <button class="gh-btn gh-btn-refresh" onclick="refreshDiff()">
+        <div class="br-controls">
+            <button class="br-btn br-btn-refresh" onclick="refreshDiff()">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 6px;">
                     <path d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z"/>
                 </svg>
@@ -41,9 +41,24 @@
 
             <div style="flex: 1;"></div>
 
-            <button class="gh-btn gh-btn-primary" onclick="submitComments()">
+            <button class="br-btn br-btn-primary" onclick="submitComments()">
                 🚀 Submit Review to Chat
             </button>
+
+
+        </div>
+    </div>
+
+    <!-- Search Interface -->
+    <div id="searchContainer" class="search-container" style="display: none;">
+        <div class="search-box">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search in diff...">
+            <div class="search-controls">
+                <span id="searchResults" class="search-results">0 of 0</span>
+                <button id="searchPrev" class="search-btn" title="Previous (Shift+Enter)">↑</button>
+                <button id="searchNext" class="search-btn" title="Next (Enter)">↓</button>
+                <button id="searchClose" class="search-btn" title="Close search (Esc)">×</button>
+            </div>
         </div>
     </div>
 

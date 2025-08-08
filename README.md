@@ -8,7 +8,14 @@ A VS Code extension for local code review with **seamless Cursor AI integration*
 
 ## Features
 
-### ✨ **New in v0.3.0: Seamless Cursor Integration**
+### 🔍 **New in v0.4.0: Advanced Search & Navigation**
+- **⌨️ Keyboard Shortcuts**: Press `Ctrl+F` (`Cmd+F` on Mac) to search within diffs
+- **🎯 Smart Search**: Real-time search with debouncing and intelligent highlighting
+- **📍 Match Navigation**: Navigate between search results with Enter/Shift+Enter or arrow buttons
+- **📁 Clickable Files**: Click filenames to open/focus files directly in VS Code
+- **💫 Smooth UX**: Hidden search interface that appears on demand
+
+### ✨ **Seamless Cursor Integration**
 - **🚀 One-Click Submission**: Automatically opens Cursor chat and submits your review
 - **🎯 Auto-Focus**: Intelligently focuses chat input for immediate interaction
 - **🔄 Smart Fallbacks**: Multiple integration methods ensure reliability
@@ -66,6 +73,29 @@ A VS Code extension for local code review with **seamless Cursor AI integration*
 - Edit: Click edit button on existing comments
 - Delete: Click delete button to remove comments
 - Multiple comments per file are supported
+
+### 🔍 Searching Within Diffs
+
+**Opening Search:**
+- Press `Ctrl+F` (Windows/Linux) or `Cmd+F` (Mac)
+- Search box appears in top-right corner
+
+**Search Features:**
+- **Real-time search**: Results update as you type (300ms debounce)
+- **Match highlighting**: Found text is highlighted in yellow
+- **Current match**: Active match has distinct highlighting
+- **Match counter**: Shows "2 of 5" style position indicator
+
+**Navigation:**
+- `Enter`: Go to next match
+- `Shift+Enter`: Go to previous match
+- Click ↑↓ arrow buttons for navigation
+- `Escape` or click ✕ to close search
+
+**Smart Behavior:**
+- Empty search automatically clears highlights
+- Changed search terms trigger new search
+- Smooth scrolling to current match
 
 ### Submitting Review to Cursor Chat
 

@@ -54,7 +54,7 @@ export class GitService {
     }
 
     try {
-      console.log("Detecting main branch...");
+
 
       // Method 1: Try to get the default branch from git config
       try {
@@ -66,11 +66,11 @@ export class GitService {
           const branchName = defaultBranch
             .trim()
             .replace("refs/remotes/origin/", "");
-          console.log(`Found default branch from remote HEAD: ${branchName}`);
+
           return branchName;
         }
       } catch (e) {
-        console.log("Could not get default branch from remote HEAD");
+
       }
 
       // Method 2: Check both local and remote branches for common names
@@ -84,12 +84,12 @@ export class GitService {
         ...remoteBranches.all.map((b) => b.replace("origin/", "")),
       ];
 
-      console.log("Available branches:", allBranches);
+
 
       // Check for common main branch names (order matters - most likely first)
       for (const branchName of MAIN_BRANCH_NAMES) {
         if (allBranches.includes(branchName)) {
-          console.log(`Found main branch: ${branchName}`);
+
           return branchName;
         }
       }
@@ -101,9 +101,7 @@ export class GitService {
       );
 
       if (otherBranches.length > 0) {
-        console.log(
-          `Using first available branch as main: ${otherBranches[0]}`
-        );
+
         return otherBranches[0];
       }
 
@@ -215,9 +213,12 @@ export class GitService {
           }
         }
 
-        // Get detailed diff for this file
+        // Get detailed diff for this file with GitHub-like settings
         const detailedDiff = await this.git.diff([
           `${baseBranch}...${currentBranch}`,
+          "-U7", // More context like GitHub (7 lines)
+          "--histogram", // GitHub's preferred diff algorithm
+          "--ignore-space-change", // Ignore whitespace changes for better alignment
           "--",
           filePath,
         ]);

@@ -28,6 +28,7 @@ export const WEBVIEW_COMMANDS = {
   UPDATE_LOADING_STATUS: "updateLoadingStatus",
   HIDE_LOADING: "hideLoading",
   SHOW_ERROR: "showError",
+  OPEN_FILE: "openFile",
 } as const;
 
 export const LANGUAGE_MAP: Record<string, string> = {
