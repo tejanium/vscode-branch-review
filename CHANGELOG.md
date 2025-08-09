@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.5.0]
+
+### Advanced Comment Storage System
+- **Context-Based Anchoring**: Comments now track surrounding code context for intelligent repositioning
+- **Smart Line Tracking**: Automatically repositions comments when code is moved or modified
+- **Robust Validation**: Comments validate against actual file content with multi-status tracking
+- **Legacy Migration**: Seamlessly upgrades old comment formats to new system
+- **Force Push Handling**: Comments persist correctly through history rewrites when content unchanged
+
+### Enhanced Comment Workflow  
+- **Streamlined Submission**: Auto-clears submitted comments without user prompts
+- **WYSIWYG Principle**: What you see in UI is exactly what gets submitted
+- **Advanced Filtering**: Comments scope correctly to current diff context
+- **Performance Optimized**: Efficient handling of large files and unicode content
+
+### Developer Experience
+- **Comprehensive Test Suite**: 600+ lines of automated tests covering edge cases
+- **Debug Tools**: Detailed validation information for troubleshooting
+- **Error Resilience**: Graceful handling of malformed data and boundary conditions
+
 ## [0.4.0]
 
 ### Major Features

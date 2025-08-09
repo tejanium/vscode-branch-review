@@ -31,6 +31,10 @@ export class ReviewPanel {
     this.workspaceRoot = workspaceRoot;
   }
 
+  getCurrentBaseBranch(): string {
+    return this.currentBaseBranch;
+  }
+
   async showReview(currentBranch: string, baseBranch: string, diff: FileDiff[]) {
     this.currentDiff = diff;
 
@@ -197,7 +201,34 @@ export class ReviewPanel {
   private async handleWebviewMessage(message: any) {
     switch (message.command) {
       case WEBVIEW_COMMANDS.ADD_COMMENT:
-        this.commentStorage.addComment(message.data);
+        // Add diff context to the comment before storing
+        const currentBranch = await this.gitService.getCurrentBranch(this.workspaceRoot);
+        const baseBranch =
+          this.currentBaseBranch || (await this.gitService.getMainBranch(this.workspaceRoot));
+
+        // Find the relevant file diff
+        const fileDiff = this.currentDiff.find(diff => diff.filePath === message.data.filePath);
+        if (!fileDiff) {
+          vscode.window.showErrorMessage(`Could not find diff for file: ${message.data.filePath}`);
+          break;
+        }
+
+        // Create anchor data for this comment (GitHub-style)
+        const anchor = this.commentStorage.createCommentAnchor(
+          baseBranch,
+          currentBranch,
+          fileDiff,
+          message.data.startLine,
+          message.data.endLine
+        );
+
+        const commentWithAnchor = {
+          ...message.data,
+          anchor,
+          status: 'current' as const,
+        };
+
+        this.commentStorage.addComment(commentWithAnchor);
         await this.loadComments();
         break;
       case WEBVIEW_COMMANDS.UPDATE_COMMENT:
@@ -241,7 +272,13 @@ export class ReviewPanel {
         vscode.commands.executeCommand('branchReview.submitComments');
         break;
       case WEBVIEW_COMMANDS.DELETE_ALL_COMMENTS:
-        this.commentStorage.clearAllComments();
+        // Delete only valid comments for current diff state
+        const validCommentsToDelete = this.commentStorage.getValidCommentsForDiff(this.currentDiff);
+
+        validCommentsToDelete.forEach(comment => {
+          this.commentStorage.deleteComment(comment.id);
+        });
+
         await this.loadComments();
         break;
       case WEBVIEW_COMMANDS.OPEN_FILE:
@@ -282,10 +319,28 @@ export class ReviewPanel {
 
   private async loadComments() {
     if (this.panel) {
+      // Get current branch context for display
+      const currentBranch = await this.gitService.getCurrentBranch(this.workspaceRoot);
+      const baseBranch =
+        this.currentBaseBranch || (await this.gitService.getMainBranch(this.workspaceRoot));
+
+      // Get only valid comments for the current diff state
       const allComments = this.commentStorage.getAllComments();
+      const validComments = this.commentStorage.getValidCommentsForDiff(this.currentDiff);
+
+      // Check if comments were invalidated due to content changes
+      const invalidatedCount = allComments.length - validComments.length;
+      if (invalidatedCount > 0) {
+        vscode.window.showInformationMessage(
+          `${invalidatedCount} comment(s) were hidden because the file content or commented lines have changed.`
+        );
+      }
+
       this.panel.webview.postMessage({
         command: WEBVIEW_COMMANDS.COMMENTS_UPDATED,
-        comments: allComments,
+        comments: validComments,
+        baseBranch,
+        currentBranch,
       });
     }
   }
@@ -321,6 +376,10 @@ export class ReviewPanel {
 
       const diff = await this.gitService.getDiffWithBranch(this.workspaceRoot, selectedBaseBranch);
       const allBranches = await this.gitService.getAllBranches(this.workspaceRoot);
+
+      // Update the current diff and set diff session ID for comment storage
+      this.currentDiff = diff;
+      this.commentStorage.setDiffSessionId(selectedBaseBranch, currentBranch, diff);
 
       if (this.panel && this.renderer) {
         const diffStats = WebviewRenderer.calculateDiffStats(diff);

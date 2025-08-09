@@ -49,14 +49,6 @@ export function activate(context: vscode.ExtensionContext) {
       COMMANDS.SUBMIT_COMMENTS,
       async () => {
         try {
-          const comments = commentStorage.getAllComments();
-
-          if (comments.length === 0) {
-            vscode.window.showInformationMessage('No comments to submit');
-            return;
-          }
-
-          // Get current diff to validate comments against
           const workspaceFolders = vscode.workspace.workspaceFolders;
           if (!workspaceFolders) {
             vscode.window.showErrorMessage('No workspace folder found');
@@ -64,18 +56,51 @@ export function activate(context: vscode.ExtensionContext) {
           }
           const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
-          let currentDiff = null;
-          try {
-            currentDiff = await gitService.getDiffWithMain(workspaceRoot);
-          } catch (error) {
-            // Silently continue without diff validation
+          if (!currentReviewPanel) {
+            vscode.window.showInformationMessage(
+              'No active review panel. Please start a branch review first.'
+            );
+            return;
           }
 
-          const reviewSummary = await generateReviewSummary(comments, currentDiff);
+          // Get current branch context for display
+          const currentBranch = await gitService.getCurrentBranch(workspaceRoot);
+          const baseBranch =
+            currentReviewPanel.getCurrentBaseBranch() ||
+            (await gitService.getMainBranch(workspaceRoot));
+
+          // Get current diff to ensure we're working with the latest state
+          let currentDiff = null;
+          try {
+            currentDiff = await gitService.getDiffWithBranch(workspaceRoot, baseBranch);
+          } catch (error) {
+            vscode.window.showErrorMessage(
+              'Failed to get current diff. Please refresh the review.'
+            );
+            return;
+          }
+
+          // Get only valid comments for the current diff state (exactly what user sees)
+          const validComments = commentStorage.getValidCommentsForDiff(currentDiff);
+
+          if (validComments.length === 0) {
+            vscode.window.showInformationMessage(
+              `No valid comments to submit for comparison ${currentBranch}...${baseBranch}`
+            );
+            return;
+          }
+
+          const reviewSummary = await generateReviewSummary(validComments, currentDiff);
           await copyReviewToClipboard(reviewSummary);
 
-          // Auto-clear comments after submission
-          commentStorage.clearAllComments();
+          // Automatically clear only the submitted comments (WYSIWYG principle)
+          validComments.forEach(comment => {
+            commentStorage.deleteComment(comment.id);
+          });
+
+          vscode.window.showInformationMessage(
+            `Submitted and cleared ${validComments.length} comments for ${currentBranch}...${baseBranch}`
+          );
         } catch (error) {
           vscode.window.showErrorMessage(`Failed to submit comments: ${error}`);
         }
@@ -86,13 +111,63 @@ export function activate(context: vscode.ExtensionContext) {
     let clearCommentsCommand = vscode.commands.registerCommand(
       COMMANDS.CLEAR_COMMENTS,
       async () => {
+        const totalComments = commentStorage.getAllComments().length;
         const confirm = await vscode.window.showQuickPick(['Yes', 'No'], {
-          placeHolder: 'Are you sure you want to clear all comments?',
+          placeHolder: `Are you sure you want to clear ALL ${totalComments} comments globally? (This includes comments from all branch comparisons)`,
         });
 
         if (confirm === 'Yes') {
           commentStorage.clearAllComments();
-          vscode.window.showInformationMessage('All comments cleared');
+          vscode.window.showInformationMessage(`Cleared all ${totalComments} comments globally`);
+        }
+      }
+    );
+
+    // Register command to show comment validation details
+    let showCommentDebugCommand = vscode.commands.registerCommand(
+      'branchReview.showCommentDebug',
+      async () => {
+        if (!currentReviewPanel) {
+          vscode.window.showInformationMessage('No active review panel');
+          return;
+        }
+
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) return;
+        const workspaceRoot = workspaceFolders[0].uri.fsPath;
+
+        try {
+          const currentBranch = await gitService.getCurrentBranch(workspaceRoot);
+          const baseBranch =
+            currentReviewPanel.getCurrentBaseBranch() ||
+            (await gitService.getMainBranch(workspaceRoot));
+          const currentDiff = await gitService.getDiffWithBranch(workspaceRoot, baseBranch);
+
+          const allComments = commentStorage.getAllComments();
+          let debugInfo = `Comment Debug Info (${allComments.length} total comments):\n\n`;
+
+          const fileDiffMap = new Map(currentDiff.map(diff => [diff.filePath, diff]));
+
+          const commentsWithStatus = commentStorage.getAllCommentsWithStatus(currentDiff);
+
+          for (const comment of commentsWithStatus) {
+            const validation = comment.validationInfo;
+            debugInfo += `📝 ${comment.filePath}:${comment.startLine}-${comment.endLine}\n`;
+            debugInfo += `   Status: ${validation.isValid ? '✅ VALID' : '❌ HIDDEN'} (${validation.status})\n`;
+            debugInfo += `   Reason: ${validation.reason}\n`;
+            if (validation.newPosition) {
+              debugInfo += `   Repositioned: ${comment.startLine}-${comment.endLine} → ${validation.newPosition.startLine}-${validation.newPosition.endLine}\n`;
+            }
+            debugInfo += `   Text: "${comment.text.substring(0, 50)}..."\n\n`;
+          }
+
+          const doc = await vscode.workspace.openTextDocument({
+            content: debugInfo,
+            language: 'plaintext',
+          });
+          await vscode.window.showTextDocument(doc);
+        } catch (error) {
+          vscode.window.showErrorMessage(`Failed to generate debug info: ${error}`);
         }
       }
     );
@@ -134,6 +209,7 @@ export function activate(context: vscode.ExtensionContext) {
       startReviewCommand,
       submitCommentsCommand,
       clearCommentsCommand,
+      showCommentDebugCommand,
       debugCommentsCommand,
       testSimpleCommand
     );
