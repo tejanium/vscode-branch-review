@@ -1,23 +1,22 @@
-import * as vscode from "vscode";
-import { GitService, FileDiff } from "./gitService";
-import { ReviewPanel } from "./reviewPanel";
-import { CommentStorage } from "./commentStorage";
+import * as vscode from 'vscode';
+import { GitService, FileDiff } from './gitService';
+import { ReviewPanel } from './reviewPanel';
+import { CommentStorage } from './commentStorage';
 
-import { COMMANDS, DEFAULT_CONFIG, TEMP_FILE_PATTERNS } from "./constants";
+import { COMMANDS, DEFAULT_CONFIG, TEMP_FILE_PATTERNS } from './constants';
 
 export function activate(context: vscode.ExtensionContext) {
-  const gitService = new GitService();
-  const commentStorage = new CommentStorage(context);
-  let currentReviewPanel: ReviewPanel | undefined;
+  try {
+    const gitService = new GitService();
+    const commentStorage = new CommentStorage(context);
+    let currentReviewPanel: ReviewPanel | undefined;
 
-  // Register command to start branch review
-  let startReviewCommand = vscode.commands.registerCommand(
-    COMMANDS.START_REVIEW,
-    async () => {
+    // Register command to start branch review
+    let startReviewCommand = vscode.commands.registerCommand(COMMANDS.START_REVIEW, async () => {
       try {
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders) {
-          vscode.window.showErrorMessage("No workspace folder found");
+          vscode.window.showErrorMessage('No workspace folder found');
           return;
         }
 
@@ -26,9 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
         // Check if we're in a git repository
         const isGitRepo = await gitService.isGitRepository(workspaceRoot);
         if (!isGitRepo) {
-          vscode.window.showErrorMessage(
-            "Current workspace is not a git repository"
-          );
+          vscode.window.showErrorMessage('Current workspace is not a git repository');
           return;
         }
 
@@ -36,86 +33,113 @@ export function activate(context: vscode.ExtensionContext) {
         const currentBranch = await gitService.getCurrentBranch(workspaceRoot);
 
         // Create and show review panel immediately with loading state
-        currentReviewPanel = new ReviewPanel(
-          context,
-          gitService,
-          commentStorage,
-          workspaceRoot
-        );
+        currentReviewPanel = new ReviewPanel(context, gitService, commentStorage, workspaceRoot);
 
         // Show panel immediately, then do heavy operations in background
         await currentReviewPanel.showReviewWithLoading(currentBranch);
       } catch (error) {
-        console.error("Error starting branch review:", error);
         vscode.window.showErrorMessage(
-          `Failed to start branch review: ${error}`
+          `Failed to start branch review: ${error instanceof Error ? error.message : String(error)}`
         );
       }
-    }
-  );
+    });
 
-  // Register command to copy review summary to clipboard
-  let submitCommentsCommand = vscode.commands.registerCommand(
-    COMMANDS.SUBMIT_COMMENTS,
-    async () => {
-      try {
-        const comments = commentStorage.getAllComments();
-
-        if (comments.length === 0) {
-          vscode.window.showInformationMessage("No comments to submit");
-          return;
-        }
-
-        // Get current diff to validate comments against
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders) {
-          vscode.window.showErrorMessage("No workspace folder found");
-          return;
-        }
-        const workspaceRoot = workspaceFolders[0].uri.fsPath;
-
-        let currentDiff = null;
+    // Register command to copy review summary to clipboard
+    let submitCommentsCommand = vscode.commands.registerCommand(
+      COMMANDS.SUBMIT_COMMENTS,
+      async () => {
         try {
-          currentDiff = await gitService.getDiffWithMain(workspaceRoot);
+          const comments = commentStorage.getAllComments();
+
+          if (comments.length === 0) {
+            vscode.window.showInformationMessage('No comments to submit');
+            return;
+          }
+
+          // Get current diff to validate comments against
+          const workspaceFolders = vscode.workspace.workspaceFolders;
+          if (!workspaceFolders) {
+            vscode.window.showErrorMessage('No workspace folder found');
+            return;
+          }
+          const workspaceRoot = workspaceFolders[0].uri.fsPath;
+
+          let currentDiff = null;
+          try {
+            currentDiff = await gitService.getDiffWithMain(workspaceRoot);
+          } catch (error) {
+            // Silently continue without diff validation
+          }
+
+          const reviewSummary = await generateReviewSummary(comments, currentDiff);
+          await copyReviewToClipboard(reviewSummary);
+
+          // Auto-clear comments after submission
+          commentStorage.clearAllComments();
         } catch (error) {
-          // Silently continue without diff validation
+          vscode.window.showErrorMessage(`Failed to submit comments: ${error}`);
         }
-
-        const reviewSummary = await generateReviewSummary(
-          comments,
-          currentDiff
-        );
-        await copyReviewToClipboard(reviewSummary);
-
-        // Auto-clear comments after submission
-        commentStorage.clearAllComments();
-      } catch (error) {
-        console.error("Error submitting comments:", error);
-        vscode.window.showErrorMessage(`Failed to submit comments: ${error}`);
       }
-    }
-  );
+    );
 
-  // Register command to clear all comments
-  let clearCommentsCommand = vscode.commands.registerCommand(
-    COMMANDS.CLEAR_COMMENTS,
-    async () => {
-      const confirm = await vscode.window.showQuickPick(["Yes", "No"], {
-        placeHolder: "Are you sure you want to clear all comments?",
-      });
+    // Register command to clear all comments
+    let clearCommentsCommand = vscode.commands.registerCommand(
+      COMMANDS.CLEAR_COMMENTS,
+      async () => {
+        const confirm = await vscode.window.showQuickPick(['Yes', 'No'], {
+          placeHolder: 'Are you sure you want to clear all comments?',
+        });
 
-      if (confirm === "Yes") {
-        commentStorage.clearAllComments();
-        vscode.window.showInformationMessage("All comments cleared");
+        if (confirm === 'Yes') {
+          commentStorage.clearAllComments();
+          vscode.window.showInformationMessage('All comments cleared');
+        }
       }
-    }
-  );
+    );
 
-  context.subscriptions.push(
-    startReviewCommand,
-    submitCommentsCommand,
-    clearCommentsCommand
-  );
+    // Register debug command for development
+    let debugCommentsCommand = vscode.commands.registerCommand(
+      COMMANDS.DEBUG_COMMENTS,
+      async () => {
+        try {
+          const comments = commentStorage.getAllComments();
+
+          let message;
+          if (comments.length > 0) {
+            try {
+              const commentsJson = JSON.stringify(comments, null, 2);
+              message = `Found ${comments.length} comments:\n${commentsJson}`;
+            } catch (jsonError) {
+              message = `Found ${comments.length} comments but could not serialize them: ${jsonError}`;
+            }
+          } else {
+            message = 'No comments found';
+          }
+
+          await vscode.window.showInformationMessage(message);
+        } catch (error) {
+          vscode.window.showErrorMessage(
+            `Debug command failed: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+    );
+
+    // Register simple test command
+    let testSimpleCommand = vscode.commands.registerCommand(COMMANDS.TEST_SIMPLE, () => {
+      vscode.window.showInformationMessage('Simple test command works!');
+    });
+
+    context.subscriptions.push(
+      startReviewCommand,
+      submitCommentsCommand,
+      clearCommentsCommand,
+      debugCommentsCommand,
+      testSimpleCommand
+    );
+  } catch (error) {
+    throw error;
+  }
 }
 
 async function generateReviewSummary(
@@ -123,7 +147,7 @@ async function generateReviewSummary(
   currentDiff: FileDiff[] | null = null
 ): Promise<string> {
   if (comments.length === 0) {
-    return "No review comments to submit.";
+    return 'No review comments to submit.';
   }
 
   // Simple filter - only exclude obvious temp/system files, keep all user comments
@@ -131,19 +155,19 @@ async function generateReviewSummary(
     const filePath = comment.filePath;
 
     // Only skip obvious temp/system files
-    return !TEMP_FILE_PATTERNS.some((pattern) => filePath.includes(pattern));
+    return !TEMP_FILE_PATTERNS.some(pattern => filePath.includes(pattern));
   });
 
   if (validComments.length === 0) {
-    return "No valid review comments to submit.";
+    return 'No valid review comments to submit.';
   }
 
   // Get prompt configuration from VS Code settings
-  const config = vscode.workspace.getConfiguration("branchReview.prompt");
-  const header = config.get<string>("header") || DEFAULT_CONFIG.PROMPT_HEADER;
-  const footer = config.get<string>("footer") || DEFAULT_CONFIG.PROMPT_FOOTER;
+  const config = vscode.workspace.getConfiguration('branchReview.prompt');
+  const header = config.get<string>('header') || DEFAULT_CONFIG.PROMPT_HEADER;
+  const footer = config.get<string>('footer') || DEFAULT_CONFIG.PROMPT_FOOTER;
 
-  let summary = header + "\n\n";
+  let summary = header + '\n\n';
 
   // Group comments by file
   const commentsByFile = new Map<string, any[]>();
@@ -169,7 +193,7 @@ async function generateReviewSummary(
       if (comment.startLine !== comment.endLine) {
         summary += `-${comment.endLine}`;
       }
-      summary += ")\n\n";
+      summary += ')\n\n';
 
       summary += `**Feedback:** ${comment.text}\n\n`;
 
@@ -177,16 +201,16 @@ async function generateReviewSummary(
         comment.codeSnippet &&
         comment.codeSnippet !== `Lines ${comment.startLine}-${comment.endLine}`
       ) {
-        summary += "**Code Reference:**\n";
-        summary += "```\n";
+        summary += '**Code Reference:**\n';
+        summary += '```\n';
         summary += comment.codeSnippet;
-        summary += "\n```\n\n";
+        summary += '\n```\n\n';
       }
     });
   });
 
   // Add footer
-  summary += "\n" + footer;
+  summary += '\n' + footer;
 
   return summary;
 }
@@ -198,10 +222,10 @@ async function copyReviewToClipboard(reviewSummary: string) {
   try {
     // Try to open and focus chat automatically
     const chatCommands = [
-      "aichat.newchataction", // Open Chat
-      "aichat.newfollowupaction", // Focus chat input
-      "workbench.panel.chat.view.copilot.focus", // Focus chat panel
-      "composer.openChatAsEditor", // Open chat as editor
+      'aichat.newchataction', // Open Chat
+      'aichat.newfollowupaction', // Focus chat input
+      'workbench.panel.chat.view.copilot.focus', // Focus chat panel
+      'composer.openChatAsEditor', // Open chat as editor
     ];
 
     let chatOpened = false;
@@ -217,13 +241,11 @@ async function copyReviewToClipboard(reviewSummary: string) {
 
     if (chatOpened) {
       // Wait for chat to focus, then auto-paste
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       try {
-        await vscode.commands.executeCommand(
-          "editor.action.clipboardPasteAction"
-        );
-        vscode.window.showInformationMessage("✅ Review submitted to chat!");
+        await vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+        vscode.window.showInformationMessage('✅ Review submitted to chat!');
         return;
       } catch (pasteError) {
         // Fall back to manual paste instruction
@@ -234,9 +256,7 @@ async function copyReviewToClipboard(reviewSummary: string) {
   }
 
   // Fallback: Show simple message
-  vscode.window.showInformationMessage(
-    "📋 Review copied to clipboard - paste in chat!"
-  );
+  vscode.window.showInformationMessage('📋 Review copied to clipboard - paste in chat!');
 }
 
 export function deactivate() {}

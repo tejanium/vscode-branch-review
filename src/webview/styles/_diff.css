@@ -1,0 +1,265 @@
+/* Diff view styles */
+.br-file {
+  margin-bottom: 24px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  overflow: visible;
+  position: relative;
+}
+
+.br-file-header {
+  background-color: #f6f8fa;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #d0d7de;
+  border-left: 1px solid #d0d7de;
+  border-right: 1px solid #d0d7de;
+  position: sticky;
+  top: var(--header-height, 120px);
+  z-index: 10;
+  margin: 0 -1px -1px -1px;
+  /* border-top and border-radius are set dynamically by StickyController */
+}
+
+.br-file-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.br-file-path {
+  font-family: var(--font-family-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.br-file-path.clickable {
+  cursor: pointer;
+  color: #0969da;
+  text-decoration: none;
+  transition: color 0.1s ease;
+}
+
+.br-file-path.clickable:hover {
+  color: #0550ae;
+  text-decoration: underline;
+}
+
+.br-file-stats {
+  font-size: 12px;
+  color: #656d76;
+}
+
+.br-added {
+  color: #1a7f37;
+  font-weight: 600;
+}
+
+.br-removed {
+  color: #cf222e;
+  font-weight: 600;
+}
+
+/* Unified diff table */
+.br-unified-diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  table-layout: auto;
+}
+
+.br-diff-row {
+  border: none;
+}
+
+.br-unified-diff-table .br-old-line-num,
+.br-unified-diff-table .br-new-line-num {
+  width: 1% !important;
+  min-width: 50px !important;
+  line-height: 20px;
+  text-align: right;
+  vertical-align: top;
+  color: var(--color-text-secondary);
+  background-color: var(--color-bg-primary);
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  font-size: 12px;
+  white-space: nowrap;
+  padding: 2px var(--space-2);
+}
+
+.br-unified-diff-table .br-old-content {
+  width: 49%;
+  padding: 2px 12px;
+  vertical-align: top;
+  background-color: var(--color-bg-primary);
+}
+
+.br-unified-diff-table .br-new-content {
+  width: 49%;
+  padding: 2px 12px;
+  vertical-align: top;
+  background-color: var(--color-bg-primary);
+  position: relative;
+}
+
+/* Unified table line colors */
+.br-unified-diff-table .br-line-added .br-old-line-num,
+.br-unified-diff-table .br-line-added .br-old-content {
+  background-color: var(--color-bg-secondary);
+}
+
+.br-unified-diff-table .br-line-added .br-new-line-num {
+  background-color: var(--color-diff-new-line-bg);
+}
+
+.br-unified-diff-table .br-line-added .br-new-content {
+  background-color: var(--color-diff-new-content-bg);
+}
+
+.br-unified-diff-table .br-line-removed .br-old-line-num {
+  background-color: var(--color-diff-old-line-bg);
+}
+
+.br-unified-diff-table .br-line-removed .br-old-content {
+  background-color: var(--color-diff-old-content-bg);
+}
+
+.br-unified-diff-table .br-line-removed .br-new-line-num,
+.br-unified-diff-table .br-line-removed .br-new-content {
+  background-color: var(--color-bg-secondary);
+}
+
+/* Modified lines: both sides have changes */
+.br-unified-diff-table .br-line-modified .br-old-line-num {
+  background-color: var(--color-diff-old-line-bg);
+}
+
+.br-unified-diff-table .br-line-modified .br-old-content {
+  background-color: var(--color-diff-old-content-bg);
+}
+
+.br-unified-diff-table .br-line-modified .br-new-line-num {
+  background-color: var(--color-diff-new-line-bg);
+}
+
+.br-unified-diff-table .br-line-modified .br-new-content {
+  background-color: var(--color-diff-new-content-bg);
+}
+
+/* Selection styling - continuous borders */
+.br-line-selected {
+  background-color: var(--color-selection-bg) !important;
+}
+
+/* Base selection styling for new side only */
+.br-line-selected .br-new-line-num,
+.br-line-selected .br-new-content {
+  background-color: var(--color-selection-bg) !important;
+  color: inherit !important;
+}
+
+/* First row of selection - top border */
+.br-line-selected-first .br-new-line-num {
+  border-top: 2px solid var(--color-selection-border) !important;
+  border-left: 2px solid var(--color-selection-border) !important;
+}
+
+.br-line-selected-first .br-new-content {
+  border-top: 2px solid var(--color-selection-border) !important;
+  border-right: 2px solid var(--color-selection-border) !important;
+}
+
+/* Last row of selection - bottom border */
+.br-line-selected-last .br-new-line-num {
+  border-bottom: 2px solid var(--color-selection-border) !important;
+  border-left: 2px solid var(--color-selection-border) !important;
+}
+
+.br-line-selected-last .br-new-content {
+  border-bottom: 2px solid var(--color-selection-border) !important;
+  border-right: 2px solid var(--color-selection-border) !important;
+}
+
+/* Middle rows of selection - left and right borders only */
+.br-line-selected-middle .br-new-line-num {
+  border-left: 2px solid var(--color-selection-border) !important;
+}
+
+.br-line-selected-middle .br-new-content {
+  border-right: 2px solid var(--color-selection-border) !important;
+}
+
+/* Single row selection - all borders */
+.br-line-selected-first.br-line-selected-last .br-new-line-num {
+  border: 2px solid var(--color-selection-border) !important;
+  border-right: none !important;
+}
+
+.br-line-selected-first.br-line-selected-last .br-new-content {
+  border: 2px solid var(--color-selection-border) !important;
+  border-left: none !important;
+}
+
+/* Hunk headers */
+.br-hunk-header {
+  background-color: var(--color-hunk-header-bg) !important;
+}
+
+.br-hunk-header-line {
+  background-color: var(--color-hunk-header-bg) !important;
+  border-right: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  text-align: center;
+  padding: 2px var(--space-2);
+  width: 1% !important;
+  min-width: 50px !important;
+  user-select: none;
+  line-height: 20px;
+}
+
+.br-hunk-header-content {
+  background-color: var(--color-hunk-header-bg) !important;
+  padding: 2px 12px;
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  line-height: 20px;
+}
+
+/* Comment button */
+.br-comment-btn {
+  position: absolute;
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  background-color: #0969da;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.1s;
+  pointer-events: none; /* Disable pointer events when invisible */
+}
+
+.br-diff-row:hover .br-comment-btn {
+  opacity: 1;
+  pointer-events: auto; /* Enable pointer events when visible */
+}

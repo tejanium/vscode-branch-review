@@ -21,14 +21,38 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:branchReview.startReview"
+    "onCommand:branchReview.startReview",
+    "onCommand:branchReview.testSimple",
+    "onCommand:branchReview.debugComments",
+    "onCommand:branchReview.submitComments",
+    "onCommand:branchReview.clearComments"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "branchReview.startReview",
-        "title": "Branch Review",
+        "title": "Start Branch Review",
+        "category": "Branch Review"
+      },
+      {
+        "command": "branchReview.submitComments",
+        "title": "Copy Review Comments to Clipboard",
+        "category": "Branch Review"
+      },
+      {
+        "command": "branchReview.clearComments",
+        "title": "Clear All Comments",
+        "category": "Branch Review"
+      },
+      {
+        "command": "branchReview.debugComments",
+        "title": "Debug Stored Comments",
+        "category": "Branch Review"
+      },
+      {
+        "command": "branchReview.testSimple",
+        "title": "Test Simple Command",
         "category": "Branch Review"
       }
     ],
@@ -43,6 +67,15 @@
       "commandPalette": [
         {
           "command": "branchReview.startReview"
+        },
+        {
+          "command": "branchReview.submitComments"
+        },
+        {
+          "command": "branchReview.clearComments"
+        },
+        {
+          "command": "branchReview.debugComments"
         }
       ]
     },
@@ -67,8 +100,8 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "npm run build:webview && tsc -p ./",
-    "build:webview": "mkdir -p out/webview/controllers && cp src/webview/webview.html out/webview/ && cp src/webview/app.js out/webview/ && cp src/webview/events.js out/webview/ && cp src/webview/controllers/*.js out/webview/controllers/ && npm run build:css && cp node_modules/@hotwired/stimulus/dist/stimulus.js out/webview/stimulus.min.js",
-    "build:css": "cat src/webview/styles/_base.css src/webview/styles/_header.css src/webview/styles/_buttons.css src/webview/styles/_diff.css src/webview/styles/_comments.css src/webview/styles/_search.css src/webview/styles/_prism.css src/webview/styles/_utilities.css > out/webview/webview.css",
+    "build:webview": "mkdir -p out/webview/controllers && cp src/webview/webview.html out/webview/ && cp src/webview/app.js out/webview/ && cp src/webview/events.js out/webview/ && cp src/webview/controllers/*.js out/webview/controllers/ && npm run build:css && cp node_modules/@hotwired/stimulus/dist/stimulus.js out/webview/stimulus.min.js && node scripts/build-prism.js",
+    "build:css": "cat src/webview/styles/_base.css src/webview/styles/_header.css src/webview/styles/_buttons.css src/webview/styles/_diff.css src/webview/styles/_comments.css src/webview/styles/_search.css src/webview/styles/_utilities.css > out/webview/webview.css",
     "watch": "npm run build:webview && tsc -watch -p ./",
     "dev": "npm run compile && npm run watch",
     "package": "vsce package",

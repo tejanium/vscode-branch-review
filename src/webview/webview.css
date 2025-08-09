@@ -1,6 +1,6 @@
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
-    Helvetica, Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
   margin: 0;
   padding: 0;
   background-color: #ffffff;
@@ -9,8 +9,9 @@ body {
 }
 
 .code-font {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Code",
-    "Roboto Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
   font-size: 12px;
   line-height: 1.45;
 }
@@ -264,7 +265,9 @@ body {
   justify-content: center;
   font-size: 12px;
   line-height: 1;
-  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+  transition:
+    color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out;
 }
 
 .br-copy-btn:hover {
@@ -296,8 +299,9 @@ body {
 /* GitHub diff table */
 .br-diff-table {
   width: 100%;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Code",
-    "Roboto Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
   font-size: 12px;
   border-collapse: collapse;
 }
@@ -367,8 +371,9 @@ body {
   background-color: #dbeafe !important;
   border-right: 1px solid #d1d9e0;
   color: #656d76;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Code",
-    "Roboto Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
   font-size: 12px;
   text-align: center;
   padding: 4px 8px;
@@ -380,8 +385,9 @@ body {
 .br-hunk-header-content {
   background-color: #dbeafe !important;
   padding: 4px 8px;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Code",
-    "Roboto Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
   font-size: 12px;
 }
 
@@ -529,8 +535,9 @@ body {
 .br-unified-diff-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", "Cascadia Code",
-    "Roboto Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
   font-size: 12px;
   table-layout: auto;
 }

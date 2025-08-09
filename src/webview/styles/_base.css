@@ -1,0 +1,90 @@
+/* Base styles and reset */
+:root {
+  /* Color tokens */
+  --color-text-primary: #24292e;
+  --color-text-secondary: #656d76;
+  --color-text-muted: #8c959f;
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f6f8fa;
+  --color-border-primary: #d0d7de;
+  --color-border-secondary: rgba(27, 31, 36, 0.15);
+  --color-accent-primary: #0969da;
+  --color-accent-hover: #0550ae;
+  --color-success: #1f883d;
+  --color-success-hover: #1a7f37;
+  --color-danger: #cf222e;
+  --color-danger-hover: #a40e26;
+
+  /* Diff colors */
+  --color-diff-new-line-bg: #aceebb;
+  --color-diff-old-line-bg: #ffcecb;
+  --color-diff-new-content-bg: #dafbe1;
+  --color-diff-old-content-bg: #ffebe9;
+  --color-selection-bg: #fff8c5;
+  --color-selection-border: #f6e8a6;
+  --color-hunk-header-bg: #ddf4ff;
+
+  /* Typography */
+  --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  --font-family-mono: var(
+    --fontStack-monospace,
+    ui-monospace,
+    SFMono-Regular,
+    SF Mono,
+    Menlo,
+    Consolas,
+    Liberation Mono,
+    monospace
+  );
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  overflow-x: hidden;
+}
+
+.code-font {
+  font-family: var(--font-family-mono);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: var(--radius-md);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
