@@ -76,13 +76,13 @@ export const unchangedRowTemplate = (data: {
   const highlightedContent = SyntaxHighlighter.addSyntaxHighlighting(data.content, data.filePath);
   return `
 <tr class="br-diff-row" data-line-id="${data.filePath}:new:${data.newLine}" data-selection-target="selectableRow">
-  <td class="br-diff-line-num br-old-line-num" data-controller="line" data-line-file-path-value="${data.filePath}" data-line-line-number-value="${data.oldLine}" data-action="click->line#select">${data.oldLine}</td>
-  <td class="br-diff-line-content br-old-content" data-search-target="searchableContent" data-controller="line" data-line-file-path-value="${data.filePath}" data-line-line-number-value="${data.oldLine}" data-action="click->line#select">
+  <td class="br-diff-line-num br-old-line-num" data-line-number="${data.oldLine}" data-action="click->selection#select">${data.oldLine}</td>
+  <td class="br-diff-line-content br-old-content" data-search-target="searchableContent">
     <pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${highlightedContent}</pre>
   </td>
-  <td class="br-diff-line-num br-new-line-num" data-controller="line" data-line-file-path-value="${data.filePath}" data-line-line-number-value="${data.newLine}" data-action="click->line#select">${data.newLine}</td>
-  <td class="br-diff-line-content br-new-content" data-search-target="searchableContent" data-controller="line" data-line-file-path-value="${data.filePath}" data-line-line-number-value="${data.newLine}" data-action="click->line#select">
-    <button class="br-comment-btn" data-controller="line" data-line-file-path-value="${data.filePath}" data-line-line-number-value="${data.newLine}" data-action="click->line#addComment">+</button>
+  <td class="br-diff-line-num br-new-line-num" data-line-number="${data.newLine}" data-action="click->selection#select">${data.newLine}</td>
+  <td class="br-diff-line-content br-new-content" data-search-target="searchableContent">
+    <button class="br-comment-btn" data-line-number="${data.newLine}" data-action="click->comment#addComment">+</button>
     <pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${highlightedContent}</pre>
   </td>
 </tr>`;

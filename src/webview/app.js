@@ -7,7 +7,7 @@ import CommentNavigationController from './controllers/comment_navigation_contro
 import FileController from './controllers/file_controller.js';
 import SelectionController from './controllers/selection_controller.js';
 import SearchController from './controllers/search_controller.js';
-import LineController from './controllers/line_controller.js';
+
 import StickyController from './controllers/sticky_controller.js';
 
 // Initialize Stimulus application
@@ -21,7 +21,7 @@ application.register('comment-navigation', CommentNavigationController);
 application.register('file', FileController);
 application.register('selection', SelectionController);
 application.register('search', SearchController);
-application.register('line', LineController);
+
 application.register('sticky', StickyController);
 
 // Global state initialization

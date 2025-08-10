@@ -258,7 +258,7 @@ export class WebviewRenderer {
                 addedLine.content,
                 file.filePath
               );
-              newContent = `<button class="br-comment-btn" data-action="click->comment#addComment" data-line-number="${newLine}">+</button><pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${highlightedNewContent}</pre>`;
+              newContent = `<button class="br-comment-btn" data-line-number="${newLine}" data-action="click->comment#addComment">+</button><pre class="code-font" style="margin: 0; white-space: pre-wrap; font-family: inherit;">${highlightedNewContent}</pre>`;
               newLineId = `${file.filePath}:new:${newLine}`;
               newLine++;
             }
@@ -283,11 +283,9 @@ export class WebviewRenderer {
                 newLineNum,
                 newContent,
                 newLineAttrs: newLineId
-                  ? `data-action="click->selection#select" data-line-number="${newLineNum}"`
+                  ? `data-line-number="${newLineNum}" data-action="click->selection#select"`
                   : '',
-                newContentAttrs: newLineId
-                  ? `data-action="click->selection#select" data-line-number="${newLineNum}"`
-                  : '',
+                newContentAttrs: '',
               })
             );
           }

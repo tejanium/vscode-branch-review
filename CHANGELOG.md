@@ -9,11 +9,14 @@
 - **Legacy Migration**: Seamlessly upgrades old comment formats to new system
 - **Force Push Handling**: Comments persist correctly through history rewrites when content unchanged
 
-### Enhanced Comment Workflow  
+### Enhanced Comment Workflow
 - **Streamlined Submission**: Auto-clears submitted comments without user prompts
 - **WYSIWYG Principle**: What you see in UI is exactly what gets submitted
 - **Advanced Filtering**: Comments scope correctly to current diff context
 - **Performance Optimized**: Efficient handling of large files and unicode content
+
+### User Interface
+- **Line Selection Improvements**: Better line selection
 
 ### Developer Experience
 - **Comprehensive Test Suite**: 600+ lines of automated tests covering edge cases
