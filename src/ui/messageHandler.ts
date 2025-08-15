@@ -157,14 +157,14 @@ export class MessageHandler {
 
   private async handleChangeBranch(message: any): Promise<void> {
     try {
-      const { newBaseBranch } = message;
-      this.panelOperations.updateLoadingStatus(`Switching to compare with ${newBaseBranch}...`);
+      const { baseBranch } = message.data;
+      this.panelOperations.updateLoadingStatus(`Switching to compare with ${baseBranch}...`);
 
-      const newDiff = await this.modeManager.switchBaseBranch(newBaseBranch);
+      const newDiff = await this.modeManager.switchBaseBranch(baseBranch);
       this.onDiffUpdate(newDiff);
 
       const currentBranch = await this.gitService.getCurrentBranch(this.workspaceRoot);
-      await this.onContentReload(currentBranch, newBaseBranch, newDiff);
+      await this.onContentReload(currentBranch, baseBranch, newDiff);
 
       this.panelOperations.hideLoading();
     } catch (error) {

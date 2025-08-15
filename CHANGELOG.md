@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.1]
+
+### Bug Fixes
+- **Fixed Branch Selection Dropdown**: Resolved issue where branch switching would fail with "fatal: ambiguous argument 'undefined'" error
+- **Improved Message Handling**: Fixed destructuring of branch selection messages in webview communication
+
 ## [0.6.0]
 
 ### New Features

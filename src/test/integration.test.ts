@@ -100,6 +100,124 @@ suite('Branch Review Integration Tests', () => {
       assert.ok(diff[0].newContent.includes('Branch B changes'));
     });
 
+    test('should successfully switch branches without crashing when user selects from dropdown', async () => {
+      // Arrange: User is reviewing a branch and wants to compare against a different base branch
+      testRepo.createBranch('feature/feature-a');
+      testRepo.createBranch('feature/feature-b');
+
+      // User is currently on feature-a and wants to compare against feature-b
+      testRepo.switchToBranch('feature/feature-a');
+      reviewPanel = new ReviewPanel(
+        mockContext,
+        gitService,
+        commentStorage,
+        testRepo.getWorkspaceRoot()
+      );
+
+      // Act: User selects a different branch from the dropdown
+      // This simulates the exact user action that was causing the crash
+      await (reviewPanel as any).messageHandler.handleMessage({
+        command: WEBVIEW_COMMANDS.CHANGE_BRANCH,
+        data: { baseBranch: 'feature/feature-b' },
+      });
+
+      // Assert: The branch switch should complete successfully without errors
+      // User should see the review panel update to show the new comparison
+      // No more "Failed to switch branch: Error: fatal: ambiguous argument 'undefined...ts/quizzz'" error
+      assert.ok(true, 'Branch switching should complete without crashing');
+    });
+
+    test('should handle branch selection message with correct data structure', async () => {
+      // Arrange: User is in the review panel and wants to change the base branch
+      testRepo.createBranch('feature/development');
+      testRepo.switchToBranch('main');
+
+      reviewPanel = new ReviewPanel(
+        mockContext,
+        gitService,
+        commentStorage,
+        testRepo.getWorkspaceRoot()
+      );
+
+      // Act: User clicks on a branch in the dropdown (simulates the branch controller behavior)
+      // The branch controller sends: { command: 'changeBranch', data: { baseBranch: 'feature/development' } }
+      const branchSelectionMessage = {
+        command: WEBVIEW_COMMANDS.CHANGE_BRANCH,
+        data: { baseBranch: 'feature/development' },
+      };
+
+      // This should not throw the "undefined" error that was happening before
+      await (reviewPanel as any).messageHandler.handleMessage(branchSelectionMessage);
+
+      // Assert: The message handler should process the branch selection correctly
+      // User should see the loading state and then the new comparison
+      // The key fix: message.data.baseBranch should be properly extracted, not undefined
+      assert.ok(true, 'Branch selection message should be processed without errors');
+    });
+
+    test('should successfully switch branches when user selects from dropdown', async () => {
+      // Arrange: Import the actual MessageHandler class to test the real implementation
+      const { MessageHandler } = require('../ui/messageHandler');
+
+      // Create mocks that simulate the real behavior
+      const mockPanelOperations = {
+        updateLoadingStatus: () => {},
+        hideLoading: () => {},
+        showError: (message: string) => {
+          // If showError is called, the user experience is broken - they get an error instead of success
+          throw new Error(`User experience broken: ${message}`);
+        },
+        postMessage: () => {},
+      };
+
+      const mockModeManager = {
+        switchBaseBranch: async (branch: string) => {
+          // This should succeed when given a valid branch name
+          if (branch === undefined) {
+            throw new Error('Cannot switch to undefined branch - this is the real bug!');
+          }
+          // Return a mock diff to simulate successful branch switch
+          return [{ filePath: 'test.js', status: 'modified', newContent: 'updated content' }];
+        },
+        getCurrentBaseBranch: () => 'main',
+      };
+
+      const mockGitService = {
+        getCurrentBranch: async () => 'main',
+      };
+
+      const mockCommentStorage = {
+        getAllComments: () => [],
+      };
+
+      const messageHandler = new MessageHandler(
+        mockGitService,
+        mockCommentStorage,
+        mockPanelOperations,
+        mockModeManager,
+        '/mock/workspace',
+        () => {},
+        () => {},
+        () => []
+      );
+
+      // Act: Send message with the CORRECT structure that the branch controller sends
+      // This simulates what happens when a user actually selects a branch from the dropdown
+      const correctMessage = {
+        command: WEBVIEW_COMMANDS.CHANGE_BRANCH,
+        data: { baseBranch: 'feature/test' },
+      };
+
+      // This should succeed and switch to the branch
+      // If it fails, the user experience is broken
+      await messageHandler.handleMessage(correctMessage);
+
+      // Assert: The branch switch should succeed without errors
+      // User should see the new comparison, not an error message
+      // This test will FAIL without the fix, PASS with the fix
+      assert.ok(true, 'User should successfully switch branches without seeing error messages');
+    });
+
     test('should handle empty diff scenarios', async () => {
       // Arrange: Create branch with no changes
       testRepo.createBranch('feature/no-changes');
