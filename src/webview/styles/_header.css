@@ -14,18 +14,107 @@
 
 .br-header-content {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Row 1: Mode + Title + Stats */
+.br-header-row-1 {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 24px;
+}
+
+.br-left-section {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.br-center-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0; /* Allow text truncation */
+}
+
+.br-right-section {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Row 2: Controls */
+.br-header-row-2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 16px;
 }
 
-.br-header-left {
+.br-left-controls {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
+  align-items: center;
 }
 
+.br-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Comparison Header Styles */
+.br-comparison-header {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.br-branch-compare-header,
+.br-working-changes-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.br-comparison-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #656d76;
+  flex-shrink: 0;
+}
+
+.br-base-branch,
+.br-target-branch {
+  font-size: 14px;
+  font-weight: 600;
+  color: #24292f;
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family:
+    ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.br-arrow-left,
+.br-arrow-right {
+  color: #656d76;
+  flex-shrink: 0;
+}
+
+.br-changes-description {
+  font-size: 14px;
+  color: #24292f;
+  font-style: italic;
+}
+
+/* Legacy styles for backward compatibility */
 .br-header-title {
   font-size: 20px;
   font-weight: 600;
@@ -48,30 +137,10 @@
   margin-left: 4px;
 }
 
-.br-header-right {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: flex-end;
-}
-
 .br-diff-stats {
   font-size: 14px;
   color: #656d76;
-}
-
-.br-refresh-section {
-  margin-left: 0;
-}
-
-.br-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.br-diff-stats-section {
-  margin-top: 4px;
+  white-space: nowrap;
 }
 
 /* Comment Navigation */
@@ -96,8 +165,8 @@
 .br-btn-sm {
   padding: 4px 8px;
   font-size: 12px;
-  min-width: 28px;
-  height: 28px;
+  min-width: 32px;
+  height: 32px;
 }
 
 /* Modern GitHub-style branch selector */
@@ -263,4 +332,112 @@
   color: #656d76;
   font-size: 14px;
   font-style: italic;
+}
+
+/* Mode toggle styles */
+.br-mode-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.br-mode-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #656d76;
+  white-space: nowrap;
+}
+
+.br-mode-toggle {
+  display: inline-flex;
+  gap: 2px;
+  background-color: #f6f8fa;
+  border: 1px solid #d1d9e0;
+  border-radius: 6px;
+  padding: 2px;
+  align-items: center;
+  width: fit-content;
+  flex-shrink: 0;
+}
+
+.br-mode-btn {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+  color: #656d76;
+  white-space: nowrap;
+  min-width: auto;
+}
+
+.br-mode-btn.active {
+  background-color: #ffffff;
+  color: #1f2328;
+  box-shadow: 0 1px 3px rgba(16, 22, 26, 0.15);
+  border: 1px solid #d1d9e0;
+}
+
+.br-mode-btn.inactive {
+  color: #656d76;
+}
+
+.br-mode-btn:hover:not(.active) {
+  background-color: #f3f4f6;
+  color: #1f2328;
+}
+
+.br-mode-btn svg {
+  opacity: 0.8;
+  margin-right: 3px;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+}
+
+.br-mode-btn.active svg {
+  opacity: 1;
+}
+
+.br-title-text {
+  white-space: nowrap;
+}
+
+/* Row 3: Warning Message */
+.br-header-row-3 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.br-warning-row {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 8px 16px;
+  margin: 4px 0;
+}
+
+.br-warning-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #856404;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.br-warning-icon {
+  color: #f39c12;
+  flex-shrink: 0;
+}
+
+.br-warning-text {
+  line-height: 1.4;
 }

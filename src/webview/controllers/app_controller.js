@@ -9,6 +9,8 @@ export default class AppController extends Controller {
     'deleteAllButton',
     'submitButton',
     'refreshButton',
+    'warningRow',
+    'warningText',
   ];
   static values = {};
 
@@ -35,6 +37,9 @@ export default class AppController extends Controller {
       case 'showError':
         this.hideLoading();
         this.showErrorMessage(message.message);
+        break;
+      case 'showWarning':
+        this.showWarningMessage(message.message);
         break;
       case 'updateDiffStats':
         this.updateDiffStats(message.data);
@@ -161,6 +166,23 @@ export default class AppController extends Controller {
       }
     }, 5000);
   }
+
+    showWarningMessage(message) {
+    // Show warning in the header instead of a popup toast
+    if (this.hasWarningTextTarget && this.hasWarningRowTarget) {
+      this.warningTextTarget.textContent = message;
+      this.warningRowTarget.style.display = 'flex';
+    }
+  }
+
+  hideWarningMessage() {
+    // Hide the header warning message
+    if (this.hasWarningRowTarget) {
+      this.warningRowTarget.style.display = 'none';
+    }
+  }
+
+
 
   deleteAllComments() {
     // Immediately clear all comment displays from the UI

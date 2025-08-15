@@ -10,8 +10,6 @@ export const COMMANDS = {
   START_REVIEW: 'branchReview.startReview',
   SUBMIT_COMMENTS: 'branchReview.submitComments',
   CLEAR_COMMENTS: 'branchReview.clearComments',
-  DEBUG_COMMENTS: 'branchReview.debugComments',
-  TEST_SIMPLE: 'branchReview.testSimple',
 } as const;
 
 export const WEBVIEW_COMMANDS = {
@@ -22,13 +20,20 @@ export const WEBVIEW_COMMANDS = {
   LOAD_COMMENTS: 'loadComments',
   REFRESH_DIFF: 'refreshDiff',
   CHANGE_BRANCH: 'changeBranch',
+  CHANGE_MODE: 'changeMode',
   SUBMIT_COMMENTS: 'submitComments',
   COMMENTS_UPDATED: 'commentsUpdated',
   UPDATE_LOADING_STATUS: 'updateLoadingStatus',
   HIDE_LOADING: 'hideLoading',
   SHOW_ERROR: 'showError',
+  SHOW_WARNING: 'showWarning',
   OPEN_FILE: 'openFile',
   UPDATE_DIFF_STATS: 'updateDiffStats',
+} as const;
+
+export const REVIEW_MODES = {
+  BRANCH_COMPARE: 'branch-compare',
+  WORKING_CHANGES: 'working-changes',
 } as const;
 
 export const DEFAULT_CONFIG = {
@@ -36,6 +41,8 @@ export const DEFAULT_CONFIG = {
     '# Code Review Feedback\n\nI have reviewed the changes in this branch and have the following feedback:',
   PROMPT_FOOTER:
     "---\n\nPlease address these review comments and make the necessary changes. Once you've made the fixes, please commit the changes with an appropriate commit message. Let me know when you're done and I can review the updates.",
+  PROMPT_FOOTER_WORKING_CHANGES:
+    '---\n\nPlease address these review comments and make the necessary changes.',
 } as const;
 
 export const TEMP_FILE_PATTERNS = [

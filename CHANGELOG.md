@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0]
+
+### New Features
+- **Working Changes Mode**: Added ability to review uncommitted changes against HEAD alongside existing branch compare mode
+- **Smart Mode Selection**: Automatically defaults to optimal review mode based on uncommitted changes
+- **Intelligent Warnings**: Contextual warnings when using suboptimal review modes with actionable guidance
+- **Empty State Messages**: Helpful guidance when no changes are available to review
+- **Enhanced User Experience**: Persistent header warnings and improved mode switching feedback
+
 ## [0.5.0]
 
 ### Advanced Comment Storage System

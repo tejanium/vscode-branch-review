@@ -1,8 +1,8 @@
 /// <reference types="mocha" />
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { CommentStorage, Comment } from '../commentStorage';
-import { FileDiff } from '../gitService';
+import { CommentStorage, Comment } from '../services/commentStorage';
+import { FileDiff } from '../services/gitService';
 
 // Mock VS Code extension context
 class MockExtensionContext implements vscode.ExtensionContext {
@@ -471,22 +471,7 @@ suite('CommentStorage Tests', () => {
     });
   });
 
-  suite('Diff Session Management', () => {
-    test('should set diff session consistently', () => {
-      const fileDiffs = [
-        createFileDiff('file1.js', 'content1'),
-        createFileDiff('file2.js', 'content2'),
-      ];
-
-      // Just verify the method can be called without error
-      storage.setDiffSessionId('main', 'feature', fileDiffs);
-
-      // Verify the method works with different inputs
-      storage.setDiffSessionId('main', 'other-feature', fileDiffs);
-
-      assert.ok(true); // If we get here, the method works
-    });
-  });
+  suite('Diff Session Management', () => {});
 
   suite('Filtering and Validation', () => {
     test('should return only valid comments for current diff', () => {

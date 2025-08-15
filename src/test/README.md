@@ -1,107 +1,129 @@
-# CommentStorage Test Suite
+# Branch Review Comprehensive Test Suite
 
-This directory contains comprehensive tests for the advanced comment storage system.
+This directory contains comprehensive integration tests for the Branch Review extension that focus on behavior rather than implementation details.
+
+## Test Philosophy
+
+These tests follow the principles you requested:
+1. **No unit tests** - All tests are integration tests covering complete workflows
+2. **No VSCode UI** - Tests run without spinning up the VSCode interface
+3. **Accurate behavior testing** - Tests verify actual user workflows and data flows
+4. **Minimal mocking** - Only essential VSCode APIs are mocked, git operations use real logic
+5. **Implementation-agnostic** - Tests focus on behavior, allowing refactoring without test changes
+6. **High coverage** - Tests cover all major code paths through realistic scenarios
+7. **Behavior-focused** - Tests verify what the extension does, not how it does it
+8. **Refactor-safe** - Tests guard against regressions during implementation changes
 
 ## Test Files
 
-### `commentStorage.test.ts`
-Full test suite using Mocha framework covering:
-- **Basic Operations**: CRUD operations, storage persistence
-- **Anchor Creation**: Context-based anchoring with line tracking
-- **Validation & Repositioning**: Smart line tracking across file changes
-- **Edge Cases**: Force push, whitespace changes, line ending differences
-- **Legacy Migration**: Backwards compatibility with old comment formats
-- **Performance**: Large file handling, unicode content
+### `integration.test.ts`
+Main integration test suite covering complete user workflows:
+- **Branch Review Workflow**: End-to-end branch comparison and switching
+- **Comment Management**: Complete comment lifecycle with repositioning
+- **File Operations**: Adding, modifying, and deleting files
+- **Error Handling**: Edge cases and error scenarios
+- **Performance**: Large files and many comments
+- **Data Integrity**: Persistence and concurrent operations
 
-### `runTests.js`
-Lightweight test runner for quick development feedback.
+### `diffPipeline.test.ts`
+Tests the complete data pipeline from git operations to webview rendering:
+- **Git Service Integration**: Diff generation and branch operations
+- **Webview Rendering**: HTML generation and syntax highlighting
+- **Comment Integration**: Comments integrated with diff rendering
+- **Performance Testing**: Large diffs and complex scenarios
+- **Error Handling**: Corrupted data and missing files
+
+### `testUtils.ts`
+Shared test utilities providing:
+- **TestGitRepository**: In-memory git repository simulation
+- **MockGitService**: Git service with realistic behavior
+- **Mock VSCode APIs**: Minimal mocking of extension context and webview
+- **Test Helpers**: Utilities for creating test data and assertions
 
 ## Running Tests
 
-### Quick Test (Recommended for development)
+### Single Command (Recommended)
 ```bash
-npm run test-simple
+npm test
 ```
-Runs basic smoke tests to verify core functionality.
-
-### Full Test Suite
-```bash
-npm run test
-```
-Runs the complete Mocha test suite in VS Code environment.
-
-### Just Compile Tests
-```bash
-npm run test-compile
-```
-Verify tests compile without TypeScript errors.
+Runs the complete comprehensive test suite covering all functionality.
 
 ## Test Scenarios Covered
 
-### ✅ **Basic Functionality**
-- Add, update, delete comments
-- Persistent storage across sessions
-- Comment counting and statistics
+### ✅ **Complete User Workflows**
+- **Branch Review**: Create branches, make changes, switch between branches
+- **Comment Lifecycle**: Add, update, delete, and reposition comments
+- **File Operations**: Add, modify, delete files with proper diff generation
+- **Multi-file Changes**: Handle complex diffs with mixed operations
+- **Branch Switching**: Maintain comment consistency across branch changes
 
-### ✅ **Smart Repositioning**
-- Exact position matching (fastest path)
-- Context-based line finding when code moves
-- Smart handling of line insertions/deletions
-- Multiple context matches disambiguation
+### ✅ **Data Pipeline Integration**
+- **Git to Diff**: Complete git service to diff generation pipeline
+- **Diff to Webview**: Webview rendering with syntax highlighting
+- **Comment Integration**: Comments properly integrated with diff rendering
+- **Performance**: Large diffs and complex scenarios handled efficiently
 
-### ✅ **Edge Cases**
-- **Force Push**: Comments preserved when content unchanged
-- **File Changes**: Only affected lines become outdated
-- **Whitespace Changes**: Normalized comparison handles formatting
-- **Line Ending Differences**: CRLF/LF normalization
-- **Unicode Content**: Full UTF-8 support
-- **Large Files**: Efficient handling of 1000+ line files
-- **Empty Files**: Graceful handling of edge cases
+### ✅ **Error Handling & Edge Cases**
+- **Invalid Repositories**: Graceful handling of non-git directories
+- **Large Files**: Efficient processing of 1000+ line files
+- **Unicode Content**: Full UTF-8 support with emojis and special characters
+- **Empty Files**: Proper handling of empty and whitespace-only files
+- **Binary Content**: Graceful handling of binary-like content
+- **Missing Files**: Robust handling of file system edge cases
 
-### ✅ **Legacy Support**
-- Migration from old `diffContext` format
-- Backwards compatibility with anchor-less comments
-- Graceful degradation for malformed data
+### ✅ **Comment Intelligence**
+- **Smart Repositioning**: Comments follow code when lines are moved
+- **Context Anchoring**: Comments anchored with surrounding code context
+- **Invalidation**: Comments marked outdated when referenced code changes
+- **Multi-line Comments**: Proper handling of line ranges
+- **Whitespace Tolerance**: Comments survive formatting changes
 
-### ✅ **Validation & Safety**
-- Line number boundary checking
-- Content hash verification
-- Error handling with graceful fallbacks
-- Debug information for troubleshooting
+### ✅ **Performance & Scalability**
+- **Many Branches**: Efficient handling of 20+ branches
+- **Many Comments**: 100+ comments across multiple files
+- **Large Diffs**: Complex diffs with multiple file types
+- **Concurrent Operations**: Thread-safe comment operations
+- **Memory Efficiency**: Proper cleanup and resource management
+
+### ✅ **Data Integrity**
+- **Persistence**: Comments survive across extension sessions
+- **Concurrent Access**: Safe handling of simultaneous operations
+- **State Consistency**: Consistent state across all operations
+- **Error Recovery**: Graceful recovery from corrupted data
 
 ## Test Architecture
 
-The test suite follows VS Code extension testing best practices:
+The test suite is designed for maximum reliability and maintainability:
 
-1. **Mock VS Code API**: Complete mock implementation of `ExtensionContext`
-2. **Isolated Storage**: Each test gets fresh storage state
-3. **Real-world Scenarios**: Tests based on actual Git workflows
-4. **Performance Validation**: Ensures system scales to large codebases
+1. **Behavior-Focused**: Tests verify what the extension does, not how
+2. **Implementation-Agnostic**: Refactoring code won't break tests
+3. **Realistic Scenarios**: Tests mirror actual user workflows
+4. **Minimal Mocking**: Only essential APIs are mocked
+5. **Fast Execution**: Tests run quickly without external dependencies
+6. **Comprehensive Coverage**: All major code paths are tested
 
-## Adding New Tests
+## Test Strategy
 
-When adding new test scenarios:
-
-1. **Follow industry standards**: Model tests after proven code review practices
-2. **Test both success and failure paths**: Ensure robust error handling
-3. **Include edge cases**: Consider unusual but possible scenarios
-4. **Verify WYSIWYG principle**: What user sees = what gets submitted
-
-## Example Test Pattern
+Each test follows a clear pattern:
 
 ```typescript
-test('should handle [specific scenario]', () => {
-  // Arrange: Set up test data
-  const comment = createComment(...);
-  const fileDiff = createFileDiff(...);
+test('should handle [specific user scenario]', async () => {
+  // Arrange: Set up realistic test scenario
+  testRepo.createBranch('feature/test');
+  testRepo.modifyFile('src/app.js', 'new content');
 
-  // Act: Perform the operation
-  const result = storage.validateAndRepositionComment(comment, fileDiff);
+  // Act: Perform the complete workflow
+  const diff = await gitService.getDiffWithMain(workspaceRoot);
+  const comments = commentStorage.getValidCommentsForDiff(diff);
 
   // Assert: Verify expected behavior
-  assert.strictEqual(result.isValid, true);
-  assert.strictEqual(result.status, 'current');
+  assert.strictEqual(diff.length, 1);
+  assert.strictEqual(comments.length, 0);
 });
 ```
 
-This ensures our comment system is robust and reliable using proven industry approaches.
+This approach ensures tests are:
+- **Readable**: Clear intent and expected outcomes
+- **Reliable**: Consistent results across runs
+- **Maintainable**: Easy to update when requirements change
+- **Valuable**: Actually catch regressions and bugs

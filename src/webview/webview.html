@@ -16,57 +16,109 @@
   >
     <div class="br-header" data-controller="sticky" data-sticky-target="header">
       <div class="br-header-content">
-        <div class="br-header-left">
-          <h1 class="br-header-title">
-            Comparing
-            <div
-              class="branch-selector"
-              data-controller="branch"
-              data-branch-branches-value="{{branchesArray}}"
-              data-branch-selected-value="{{baseBranch}}"
-              data-branch-current-value="{{currentBranch}}"
-            >
-              <div class="branch-input-wrapper">
-                <input
-                  type="text"
-                  class="branch-input"
-                  placeholder="Select base branch..."
-                  value="{{baseBranch}}"
-                  readonly
-                  data-branch-target="input"
-                  data-action="click->branch#toggle keydown->branch#handleKeydown"
-                />
-                <svg
-                  class="branch-arrow"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
+        <!-- Row 1: Mode + Title + Stats -->
+        <div class="br-header-row-1">
+          <div class="br-left-section">
+            <div class="br-mode-section">
+              <span class="br-mode-label">Mode:</span>
+              <div class="br-mode-toggle" data-controller="mode-toggle">
+                <button
+                  class="br-mode-btn"
+                  data-mode="branch-compare"
+                  data-action="click->mode-toggle#changeMode"
+                  data-mode-toggle-target="branchBtn"
                 >
-                  <path
-                    d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"
-                  />
-                </svg>
-              </div>
-              <div class="branch-dropdown" data-branch-target="dropdown">
-                <div class="branch-search">
-                  <input
-                    type="text"
-                    class="branch-search-input"
-                    placeholder="Search branches..."
-                    data-branch-target="searchInput"
-                    data-action="input->branch#search keydown->branch#handleKeydown"
-                  />
-                </div>
-                <div class="branch-list" data-branch-target="list">
-                  <!-- Branches will be rendered here -->
-                </div>
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 3px;">
+                    <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM3 8a5 5 0 0 0 5 5V3a5 5 0 0 0-5 5Z"/>
+                  </svg>
+                  Branch Compare
+                </button>
+                <button
+                  class="br-mode-btn"
+                  data-mode="working-changes"
+                  data-action="click->mode-toggle#changeMode"
+                  data-mode-toggle-target="workingBtn"
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 3px;">
+                    <path d="M2.75 1.75C2.75.784 3.534 0 4.5 0h7c.966 0 1.75.784 1.75 1.75v12.5A1.75 1.75 0 0 1 11.5 16h-7a1.75 1.75 0 0 1-1.75-1.75V1.75Zm1.5 0v12.5c0 .138.112.25.25.25h7a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25h-7a.25.25 0 0 0-.25.25Z"/>
+                  </svg>
+                  Working Changes
+                </button>
               </div>
             </div>
-            <span class="br-ellipsis">...</span>
-            <span class="br-current-branch">{{currentBranch}}</span>
-          </h1>
-          <div class="br-refresh-section">
+          </div>
+
+          <div class="br-center-section">
+            <div class="br-comparison-header">
+              <!-- Branch Compare Mode -->
+              <div class="br-branch-compare-header" style="{{branchCompareDisplay}}">
+                <span class="br-comparison-label">Comparing:</span>
+                <div
+                  class="branch-selector"
+                  data-controller="branch"
+                  data-branch-branches-value="{{branchesArray}}"
+                  data-branch-selected-value="{{baseBranch}}"
+                  data-branch-current-value="{{currentBranch}}"
+                >
+                  <div class="branch-input-wrapper">
+                    <input
+                      type="text"
+                      class="branch-input"
+                      placeholder="Select base branch..."
+                      value="{{baseBranch}}"
+                      readonly
+                      data-branch-target="input"
+                      data-action="click->branch#toggle keydown->branch#handleKeydown"
+                    />
+                    <svg
+                      class="branch-arrow"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="branch-dropdown" data-branch-target="dropdown">
+                    <div class="branch-search">
+                      <input
+                        type="text"
+                        class="branch-search-input"
+                        placeholder="Search branches..."
+                        data-branch-target="searchInput"
+                        data-action="input->branch#search keydown->branch#handleKeydown"
+                      />
+                    </div>
+                    <div class="branch-list" data-branch-target="list">
+                      <!-- Branches will be rendered here -->
+                    </div>
+                  </div>
+                </div>
+                <svg class="br-arrow-right" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z"/>
+                </svg>
+                <span class="br-target-branch">{{currentBranch}}</span>
+              </div>
+
+              <!-- Working Changes Mode -->
+              <div class="br-working-changes-header" style="{{workingChangesDisplay}}">
+                <span class="br-comparison-label">Reviewing:</span>
+                <span class="br-changes-description">Uncommitted changes vs HEAD</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="br-right-section">
+            <div class="br-diff-stats">{{diffStats}}</div>
+          </div>
+        </div>
+
+        <!-- Row 2: Controls -->
+        <div class="br-header-row-2">
+          <div class="br-left-controls">
             <button
               class="br-btn br-btn-refresh"
               data-action="click->app#refreshDiff"
@@ -83,12 +135,11 @@
                   d="M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z"
                 />
               </svg>
-              Refresh
-            </button>
+              Reload
+                        </button>
           </div>
-        </div>
-        <div class="br-header-right">
-          <div class="br-controls">
+
+          <div class="br-right-controls">
             <!-- Comment Navigation -->
             <div class="br-comment-navigation" data-controller="comment-navigation">
               <span class="br-comment-count" data-comment-navigation-target="count"
@@ -146,8 +197,15 @@
               🚀 Submit Review to Chat
             </button>
           </div>
-          <div class="br-diff-stats-section">
-            <div class="br-diff-stats">{{diffStats}}</div>
+        </div>
+
+        <!-- Row 3: Warning Message (hidden by default) -->
+        <div class="br-header-row-3 br-warning-row" style="display: none;" data-app-target="warningRow">
+          <div class="br-warning-message">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="br-warning-icon">
+              <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575L6.457 1.047ZM8 5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5A.75.75 0 0 1 8 5Zm1 6a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/>
+            </svg>
+            <span class="br-warning-text" data-app-target="warningText"></span>
           </div>
         </div>
       </div>

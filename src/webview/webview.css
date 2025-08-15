@@ -30,6 +30,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  min-height: 60px;
 }
 
 .br-header-left {

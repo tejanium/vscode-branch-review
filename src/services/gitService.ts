@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { simpleGit, SimpleGit, DiffResult } from 'simple-git';
-import { MAIN_BRANCH_NAMES } from './constants';
+import { simpleGit, SimpleGit } from 'simple-git';
+import { MAIN_BRANCH_NAMES } from '../constants';
 
 export interface FileDiff {
   filePath: string;
@@ -230,6 +230,92 @@ export class GitService {
   async getDiffWithMain(workspaceRoot: string): Promise<FileDiff[]> {
     const mainBranch = await this.getMainBranch(workspaceRoot);
     return this.getDiffWithBranch(workspaceRoot, mainBranch);
+  }
+
+  async getDiffWithWorkingDirectory(workspaceRoot: string): Promise<FileDiff[]> {
+    if (!this.git) {
+      this.git = simpleGit(workspaceRoot);
+    }
+
+    try {
+      // Get the diff between the latest commit (HEAD) and working directory
+      const diffSummary = await this.git.diffSummary(['HEAD']);
+      const fileDiffs: FileDiff[] = [];
+
+      for (const file of diffSummary.files) {
+        const filePath = file.file;
+        let status: 'added' | 'modified' | 'deleted' = 'modified';
+
+        // Type guard to check if file has insertions/deletions properties
+        if ('insertions' in file && 'deletions' in file) {
+          if (file.insertions > 0 && file.deletions === 0) {
+            status = 'added';
+          } else if (file.insertions === 0 && file.deletions > 0) {
+            status = 'deleted';
+          }
+        }
+
+        // Get detailed diff for this file with GitHub-like settings
+        const detailedDiff = await this.git.diff([
+          'HEAD',
+          '-U7', // More context like GitHub (7 lines)
+          '--histogram', // GitHub's preferred diff algorithm
+          '--ignore-space-change', // Ignore whitespace changes for better alignment
+          '--',
+          filePath,
+        ]);
+        const hunks = this.parseDiff(detailedDiff);
+
+        // Get file contents
+        let oldContent = '';
+        let newContent = '';
+
+        try {
+          if (status !== 'added') {
+            oldContent = await this.git.show([`HEAD:${filePath}`]);
+          }
+          if (status !== 'deleted') {
+            // For working directory, read from file system
+            const fs = require('fs');
+            const path = require('path');
+            const fullPath = path.join(workspaceRoot, filePath);
+            try {
+              newContent = fs.readFileSync(fullPath, 'utf8');
+            } catch (fsError) {
+              // File might be deleted in working directory
+              newContent = '';
+            }
+          }
+        } catch (error) {
+          // Handle case where file doesn't exist in HEAD
+        }
+
+        fileDiffs.push({
+          filePath,
+          status,
+          oldContent,
+          newContent,
+          hunks,
+        });
+      }
+
+      return fileDiffs;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async hasUncommittedChanges(workspaceRoot: string): Promise<boolean> {
+    if (!this.git) {
+      this.git = simpleGit(workspaceRoot);
+    }
+
+    try {
+      const status = await this.git.status();
+      return status.files.length > 0;
+    } catch (error) {
+      return false;
+    }
   }
 
   private parseDiff(diffText: string): DiffHunk[] {

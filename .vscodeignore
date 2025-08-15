@@ -12,6 +12,8 @@ tsconfig.json
 src/webview/README.md
 src/webview/FILE_STRUCTURE.md
 src/webview/EVENTS.md
+src/test/README.md
+TEST_SUMMARY.md
 img/example.gif
 
 # Node modules and build files - exclude all except production dependencies

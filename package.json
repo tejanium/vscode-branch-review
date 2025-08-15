@@ -4,7 +4,7 @@
   "displayName": "Branch Review",
   "description": "GitHub-style pull request review workflow for local development with AI feedback integration.",
   "icon": "img/ico.png",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "homepage": "https://github.com/tejanium/vscode-branch-review/blob/master/README.md",
   "bugs": {
     "url": "https://github.com/tejanium/vscode-branch-review/issues"
@@ -20,9 +20,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:branchReview.startReview"
-  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -58,8 +56,20 @@
         "branchReview.prompt.footer": {
           "type": "string",
           "default": "---\n\nPlease address these review comments and make the necessary changes. Once you've made the fixes, please commit the changes with an appropriate commit message. Let me know when you're done and I can review the updates.",
-          "markdownDescription": "Text that appears at the end of your review prompt. Supports markdown formatting.",
+          "markdownDescription": "General footer text that appears at the end of your review prompt. Can be overridden by mode-specific footers below. Supports markdown formatting.",
           "order": 2
+        },
+        "branchReview.prompt.footerBranchCompare": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Footer text specifically for **Branch Compare** mode. If empty, falls back to the general footer setting. Supports markdown formatting.",
+          "order": 3
+        },
+        "branchReview.prompt.footerWorkingChanges": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Footer text specifically for **Working Changes** mode. If empty, falls back to the general footer setting. Supports markdown formatting.",
+          "order": 4
         }
       }
     }
@@ -71,10 +81,7 @@
     "build:css": "cat src/webview/styles/_base.css src/webview/styles/_header.css src/webview/styles/_buttons.css src/webview/styles/_diff.css src/webview/styles/_comments.css src/webview/styles/_search.css src/webview/styles/_prism.css src/webview/styles/_utilities.css > out/webview/webview.css",
     "watch": "npm run build:webview && tsc -watch -p ./",
     "dev": "npm run compile && npm run watch",
-    "test": "npm run compile && node ./out/test/runTest.js",
-    "test-compile": "tsc -p ./",
-    "test-simple": "npm run compile && node ./src/test/runTests.js",
-    "pretest": "npm run test-compile",
+    "test": "npm run compile && node ./src/test/standalone-runner.js",
     "package": "vsce package",
     "clean-build": "npm run compile && rm -f *.vsix && npx @vscode/vsce package",
     "format": "prettier --write 'src/webview/**/*.js'",

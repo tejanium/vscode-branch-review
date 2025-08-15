@@ -5,6 +5,7 @@ import BranchController from './controllers/branch_controller.js';
 import CommentController from './controllers/comment_controller.js';
 import CommentNavigationController from './controllers/comment_navigation_controller.js';
 import FileController from './controllers/file_controller.js';
+import ModeToggleController from './controllers/mode_toggle_controller.js';
 import SelectionController from './controllers/selection_controller.js';
 import SearchController from './controllers/search_controller.js';
 
@@ -19,6 +20,7 @@ application.register('branch', BranchController);
 application.register('comment', CommentController);
 application.register('comment-navigation', CommentNavigationController);
 application.register('file', FileController);
+application.register('mode-toggle', ModeToggleController);
 application.register('selection', SelectionController);
 application.register('search', SearchController);
 
