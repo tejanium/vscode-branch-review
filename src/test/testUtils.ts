@@ -49,6 +49,11 @@ export class TestGitRepository {
     this.files = new Map(branchFiles);
   }
 
+  commitCurrentState() {
+    // Commit the current working directory state to the current branch
+    this.branches.set(this.currentBranch, new Map(this.files));
+  }
+
   modifyFile(filePath: string, content: string) {
     this.files.set(filePath, content);
     const branchFiles = this.branches.get(this.currentBranch);
@@ -127,6 +132,41 @@ export class TestGitRepository {
     return diffs;
   }
 
+  getWorkingDirectoryDiff(): FileDiff[] {
+    // Simulate working directory changes by comparing current files with the committed branch state
+    const committedFiles = this.branches.get(this.currentBranch) || new Map();
+    const workingFiles = this.files; // Current working directory state
+
+    const diffs: FileDiff[] = [];
+    const allFiles = new Set([...committedFiles.keys(), ...workingFiles.keys()]);
+
+    for (const filePath of allFiles) {
+      const committedContent = committedFiles.get(filePath) || '';
+      const workingContent = workingFiles.get(filePath) || '';
+
+      if (committedContent !== workingContent) {
+        let status: 'added' | 'modified' | 'deleted';
+        if (!committedFiles.has(filePath)) {
+          status = 'added';
+        } else if (!workingFiles.has(filePath)) {
+          status = 'deleted';
+        } else {
+          status = 'modified';
+        }
+
+        diffs.push({
+          filePath,
+          status,
+          oldContent: committedContent,
+          newContent: workingContent,
+          hunks: this.generateHunks(committedContent, workingContent),
+        });
+      }
+    }
+
+    return diffs;
+  }
+
   private generateHunks(oldContent: string, newContent: string) {
     // Simple hunk generation for testing
     const oldLines = oldContent.split('\n');
@@ -198,6 +238,11 @@ export class MockGitService extends GitService {
 
   async hasUncommittedChanges(workspaceRoot: string): Promise<boolean> {
     return this.mockHasUncommittedChanges;
+  }
+
+  async getDiffWithWorkingDirectory(workspaceRoot: string): Promise<FileDiff[]> {
+    // Simulate working directory changes by comparing current files with the committed state
+    return this.testRepo.getWorkingDirectoryDiff();
   }
 
   async getWorkingChanges(workspaceRoot: string): Promise<FileDiff[]> {

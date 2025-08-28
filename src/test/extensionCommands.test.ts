@@ -206,6 +206,97 @@ suite('Extension Commands Integration Tests', () => {
       assert.ok(validComments.length >= 0); // May be 0 or 2 depending on validation logic
     });
 
+    test('should handle submit comments in working changes mode', async () => {
+      // Arrange: Set up working changes scenario
+      testRepo.createBranch('feature/working-changes-test');
+      testRepo.switchToBranch('feature/working-changes-test');
+
+      // Simulate working directory changes by directly creating a diff
+      // This bypasses the TestGitRepository's internal state management
+      const workingDiff = [
+        {
+          filePath: 'src/app.js',
+          status: 'modified' as const,
+          oldContent: 'function main() {\n  console.log("Hello World");\n}',
+          newContent:
+            'function main() {\n  console.log("Working changes");\n  console.log("Uncommitted change");\n}',
+          hunks: [
+            {
+              oldStart: 1,
+              oldLines: 2,
+              newStart: 1,
+              newLines: 3,
+              lines: [
+                {
+                  type: 'unchanged' as const,
+                  content: 'function main() {',
+                  oldLineNumber: 1,
+                  newLineNumber: 1,
+                },
+                {
+                  type: 'removed' as const,
+                  content: '  console.log("Hello World");',
+                  oldLineNumber: 2,
+                  newLineNumber: undefined,
+                },
+                {
+                  type: 'added' as const,
+                  content: '  console.log("Working changes");',
+                  oldLineNumber: undefined,
+                  newLineNumber: 2,
+                },
+                {
+                  type: 'added' as const,
+                  content: '  console.log("Uncommitted change");',
+                  oldLineNumber: undefined,
+                  newLineNumber: 3,
+                },
+                { type: 'unchanged' as const, content: '}', oldLineNumber: 3, newLineNumber: 4 },
+              ],
+            },
+          ],
+        },
+      ];
+
+      const workspaceRoot = testRepo.getWorkspaceRoot();
+
+      // Add comments based on working directory diff
+      const comment1 = createTestComment(
+        'working-1',
+        'src/app.js',
+        2,
+        2,
+        'Working changes comment'
+      );
+      comment1.anchor = commentStorage.createCommentAnchor(
+        'main',
+        'feature/working-changes-test',
+        workingDiff[0],
+        2,
+        2
+      );
+
+      commentStorage.addComment(comment1);
+
+      // Create review panel in working changes mode
+      reviewPanel = new ReviewPanel(mockContext, gitService, commentStorage, workspaceRoot);
+
+      // Simulate the panel being in working changes mode
+      const modeManager = (reviewPanel as any).modeManager;
+      modeManager.setMode('working-changes');
+
+      // Act: Validate comments using working directory diff (same as storage)
+      const validComments = commentStorage.getValidCommentsForDiff(workingDiff);
+
+      // Assert: Comments should be valid when using the same diff method
+      assert.strictEqual(
+        validComments.length,
+        1,
+        'Comment should be valid in working changes mode'
+      );
+      assert.strictEqual(validComments[0].id, 'working-1');
+    });
+
     test('should handle submit comments with no active review panel', async () => {
       // Arrange: Ensure no review panel exists for this test
       let localReviewPanel: ReviewPanel | undefined = undefined;

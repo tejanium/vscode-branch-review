@@ -66,6 +66,10 @@ export class MessageHandler {
         await this.handleOpenFile(message);
         break;
 
+      case WEBVIEW_COMMANDS.SUBMIT_COMMENTS:
+        await this.handleSubmitComments();
+        break;
+
       default:
         console.warn('Unknown webview command:', message.command);
     }
@@ -217,6 +221,15 @@ export class MessageHandler {
       }
     } catch (error) {
       this.panelOperations.showError(`Failed to open file: ${error}`);
+    }
+  }
+
+  private async handleSubmitComments(): Promise<void> {
+    try {
+      // Execute the submit comments command
+      await vscode.commands.executeCommand('branchReview.submitComments');
+    } catch (error) {
+      this.panelOperations.showError(`Failed to submit comments: ${error}`);
     }
   }
 

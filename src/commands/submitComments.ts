@@ -32,9 +32,14 @@ export async function createSubmitCommentsCommand(
         (await gitService.getMainBranch(workspaceRoot));
 
       // Get current diff to ensure we're working with the latest state
+      const reviewMode = currentReviewPanel.getCurrentReviewMode();
       let currentDiff = null;
       try {
-        currentDiff = await gitService.getDiffWithBranch(workspaceRoot, baseBranch);
+        if (reviewMode === 'working-changes') {
+          currentDiff = await gitService.getDiffWithWorkingDirectory(workspaceRoot);
+        } else {
+          currentDiff = await gitService.getDiffWithBranch(workspaceRoot, baseBranch);
+        }
       } catch (error) {
         vscode.window.showErrorMessage('Failed to get current diff. Please refresh the review.');
         return;
@@ -50,7 +55,6 @@ export async function createSubmitCommentsCommand(
         return;
       }
 
-      const reviewMode = currentReviewPanel.getCurrentReviewMode();
       const reviewSummary = await generateReviewSummary(validComments, currentDiff, reviewMode);
       await copyReviewToClipboard(reviewSummary);
 

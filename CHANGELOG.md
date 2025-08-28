@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.2]
+
+### Bug Fixes
+- **Fixed Comment Submission in Working Changes Mode**: Resolved issue where comments would show as "no valid comments" when submitting in working changes mode due to diff method mismatch
+
 ## [0.6.1]
 
 ### Bug Fixes
